@@ -1,2 +1,2 @@
-# SeedSigner_translation
-Translated version of SeedSigner software
+# SeedSigner_translation_emulator
+This is a seedsigner translation version emulator
