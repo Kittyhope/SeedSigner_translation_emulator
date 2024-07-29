@@ -188,8 +188,8 @@ class ToolsImageEntropyMnemonicLengthView(View):
 ****************************************************************************"""
 class ToolsDiceEntropyMnemonicLengthView(View):
     def run(self):
-        TWELVE = translator("12 words ({mnemonic_generation.DICE__NUM_ROLLS__12WORD} rolls)")
-        TWENTY_FOUR = translator("24 words ({mnemonic_generation.DICE__NUM_ROLLS__24WORD} rolls)")
+        TWELVE = f"{translator("12 words")} ({mnemonic_generation.DICE__NUM_ROLLS__12WORD}{translator("rolls")})"
+        TWENTY_FOUR = f"{translator("24 words")} ({mnemonic_generation.DICE__NUM_ROLLS__24WORD}{translator("rolls")})"
         
         button_data = [TWELVE, TWENTY_FOUR]
         selected_menu_num = ButtonListScreen(

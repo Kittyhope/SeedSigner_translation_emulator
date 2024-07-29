@@ -39,6 +39,8 @@ class LanguageSelectionView(View):
         GUIConstants.TOP_NAV_TITLE_FONT_NAME = f'NotoSans{current_selected_language}-SemiBold'
         GUIConstants.BODY_FONT_NAME = f'NotoSans{current_selected_language}-SemiBold'
         GUIConstants.BUTTON_FONT_NAME = f'NotoSans{current_selected_language}-SemiBold'
+        GUIConstants.REGULAR_FONT_NAME = f'NotoSans{current_selected_language}-Regular'
+
         settings_definition.SettingsDefinition.set_language(current_selected_language)
         
         # 언어 선택 후 메인 메뉴로 이동

@@ -289,8 +289,9 @@ class DonateScreen(BaseTopNavScreen):
 
         self.components.append(TextArea(
             text=translator("SeedSigner is 100% free & open source, funded solely by the Bitcoin community.\n\nDonate onchain or LN at:"),
-            screen_y=self.top_nav.height + 3*GUIConstants.COMPONENT_PADDING,
-            font_name=GUIConstants.BUTTON_FONT_NAME
+            screen_y=self.top_nav.height + 1*GUIConstants.COMPONENT_PADDING,
+            font_name=GUIConstants.REGULAR_FONT_NAME,
+            font_size=16
         ))
 
         self.components.append(TextArea(
