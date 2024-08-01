@@ -352,7 +352,7 @@ class Controller(Singleton):
                 # Do not push a "new" destination if it is the same as the current one on
                 # the top of the stack.
                 if len(self.back_stack) == 0 or self.back_stack[-1] != next_destination:
-                    print(f"Appending next destination: {next_destination}")
+                    logger.info(f"Appending next destination: {next_destination}")
                     self.back_stack.append(next_destination)
                 else:
                     logger.info(f"NOT appending {next_destination}")
