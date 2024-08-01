@@ -188,7 +188,7 @@ class Keyboard:
         self.rows = rows
         self.cols = cols
         self.rect = rect
-        self.font = Fonts.get_font(GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME, font_size)
+        self.font = Fonts.get_font(font_name, font_size)
 
         self.auto_wrap = auto_wrap
         self.background_color = GUIConstants.BUTTON_BACKGROUND_COLOR
@@ -523,7 +523,7 @@ class TextEntryDisplay(TextEntryDisplayConstants):
 
 
     def __post_init__(self):
-        self.font = Fonts.get_font(GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME, self.font_size)
+        self.font = Fonts.get_font(self.font_name, self.font_size)
 
 
     @property

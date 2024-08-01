@@ -1,6 +1,6 @@
 import time
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from PIL import Image, ImageDraw, ImageColor
 from typing import Any, List, Tuple
 
@@ -870,6 +870,7 @@ class LargeIconStatusScreen(ButtonListScreen):
                 screen_y=next_y,
                 font_color=self.status_color,
                 allow_text_overflow=self.allow_text_overflow,
+                font_name=GUIConstants.BODY_FONT_NAME
             )
             self.components.append(self.warning_headline_textarea)
             next_y = next_y + self.warning_headline_textarea.height
@@ -881,6 +882,7 @@ class LargeIconStatusScreen(ButtonListScreen):
             edge_padding=self.text_edge_padding,  # Don't render all the way up to the far left/right edges
             screen_y=next_y,
             allow_text_overflow=self.allow_text_overflow,
+            font_name=GUIConstants.BODY_FONT_NAME
         ))
 
 
@@ -963,12 +965,15 @@ class WarningEdgesMixin:
 
 @dataclass
 class WarningScreen(WarningEdgesMixin, LargeIconStatusScreen):
-    title: str = translator("Caution")
+    title: str = field(default="Caution")
     status_icon_name: str = SeedSignerIconConstants.WARNING
-    status_color: str = translator("yellow")
-    status_headline: str = translator("Privacy Leak!")     # The colored text under the alert icon
+    status_color: str = "yellow"
+    status_headline: str = field(default="Privacy Leak!")     # The colored text under the alert icon
 
     def __post_init__(self):
+        self.title = translator(self.title)
+        if self.status_headline is not None:
+            self.status_headline = translator(self.status_headline)
         if not self.button_data:
             self.button_data = [translator("I Understand")]
 
@@ -1104,7 +1109,7 @@ class KeyboardScreen(BaseTopNavScreen):
         self.keyboard = Keyboard(
             draw=self.renderer.draw,
             charset=self.keys_charset,
-            font_name=GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME,
+            font_name=self.keyboard_font_name,
             font_size=font_size,
             rows=self.rows,
             cols=self.cols,

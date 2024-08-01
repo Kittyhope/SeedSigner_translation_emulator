@@ -14,5 +14,16 @@ class LanguageTranslation:
         with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
 
-    def translate(self, text):
-        return self.translations.get(text, text)
+    def translate(self, text, **kwargs):
+        # 먼저 번역을 수행
+        translated = self.translations.get(text, text)
+
+        # 번역된 텍스트에 변수 값을 대입
+        if kwargs:
+            try:
+                translated = translated.format(**kwargs)
+            except KeyError:
+                # 변수 대입에 실패하면 원본 텍스트를 사용
+                return text.format(**kwargs)
+
+        return translated

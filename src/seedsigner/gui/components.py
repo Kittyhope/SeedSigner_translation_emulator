@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import pathlib
@@ -13,6 +14,7 @@ from seedsigner.models.settings import Settings
 from seedsigner.models.settings_definition import SettingsConstants
 from seedsigner.models.singleton import Singleton
 
+logger = logging.getLogger(__name__)
 
 # TODO: Remove all pixel hard coding
 class GUIConstants:
@@ -516,6 +518,7 @@ class IconTextLine(BaseComponent):
                 screen_x=text_screen_x,
                 screen_y=self.screen_y,
                 allow_text_overflow=False,
+                font_name=GUIConstants.REGULAR_FONT_NAME
             )
         else:
             self.label_textarea = None        
@@ -530,7 +533,7 @@ class IconTextLine(BaseComponent):
             canvas=self.canvas,
             height=self.height,
             text=self.value_text,
-            font_name=self.font_name,
+            font_name=GUIConstants.BODY_FONT_NAME,
             font_size=self.font_size,
             edge_padding=0,
             is_text_centered=self.is_text_centered if not self.icon_name else False,
@@ -738,7 +741,7 @@ class FormattedAddress(BaseComponent):
                     ))
 
                 remaining_display_str = remaining_display_str[max_chars_per_line:]
-                cur_y += char_height
+                cur_y += char_height + GUIConstants.BODY_LINE_SPACING
         
         self.height = cur_y
     

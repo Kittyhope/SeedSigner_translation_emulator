@@ -438,10 +438,10 @@ class PSBTAddressVerificationFailedView(View):
     def run(self):
         if self.is_multisig:
             title = translator("Caution")
-            text = translator(f"PSBT's {'change' if self.is_change else 'self-transfer'} address could not be verified with your multisig wallet descriptor.")
+            text = translator("PSBT's {change_or_selftransfer} address could not be verified with your multisig wallet descriptor.",change_or_selftransfer='change' if self.is_change else 'self-transfer')
         else:
             title = translator("Suspicious PSBT")
-            text = translator(f"PSBT's {'change' if self.is_change else 'self-transfer'} address could not be generated from your seed.")
+            text = translator("PSBT's {change_or_selftransfer} address could not be generated from your seed.",change_or_selftransfer='change' if self.is_change else 'self-transfer')
         
         DireWarningScreen(
             title=title,

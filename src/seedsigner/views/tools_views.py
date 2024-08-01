@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import hashlib
+import logging
 import os
 import time
 
@@ -9,7 +10,7 @@ from PIL.ImageOps import autocontrast
 
 from seedsigner.controller import Controller
 from seedsigner.gui.components import FontAwesomeIconConstants, GUIConstants, SeedSignerIconConstants
-from seedsigner.gui.screens import (RET_CODE__BACK_BUTTON, ButtonListScreen)
+from seedsigner.gui.screens import (RET_CODE__BACK_BUTTON, ButtonListScreen, WarningScreen)
 from seedsigner.gui.screens.tools_screens import (ToolsCalcFinalWordDoneScreen, ToolsCalcFinalWordFinalizePromptScreen,
     ToolsCalcFinalWordScreen, ToolsCoinFlipEntryScreen, ToolsDiceEntropyEntryScreen, ToolsImageEntropyFinalImageScreen,
     ToolsImageEntropyLivePreviewScreen, ToolsAddressExplorerAddressTypeScreen)
@@ -21,7 +22,7 @@ from seedsigner.views.seed_views import SeedDiscardView, SeedFinalizeView, SeedM
 from seedsigner.views.language_views import translator
 from .view import View, Destination, BackStackView
 
-
+logger = logging.getLogger(__name__)
 
 class ToolsMenuView(View):
     IMAGE = (translator(" New seed"), FontAwesomeIconConstants.CAMERA)

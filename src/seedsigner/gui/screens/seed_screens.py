@@ -555,6 +555,7 @@ class SeedWordsBackupTestPromptScreen(ButtonListScreen):
             text=translator("Optionally verify that your mnemonic backup is correct."),
             screen_y=self.top_nav.height,
             is_text_centered=True,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 
 

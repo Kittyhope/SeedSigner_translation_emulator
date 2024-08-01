@@ -211,7 +211,7 @@ class SeedMnemonicEntryView(View):
     def run(self):
         ret = self.run_screen(
             seed_screens.SeedMnemonicEntryScreen,
-            title=translator(f"Seed Word #{self.cur_word_index + 1}"),  # Human-readable 1-indexing!
+            title=translator("Seed Word #{cur_word_index_}",cur_word_index_=self.cur_word_index + 1),  # Human-readable 1-indexing!
             initial_letters=list(self.cur_word) if self.cur_word else ["a"],
             wordlist=Seed.get_wordlist(wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__WORDLIST_LANGUAGE)),
         )
@@ -272,7 +272,7 @@ class SeedMnemonicInvalidView(View):
             WarningScreen,
             title=translator("Invalid Mnemonic!"),
             status_headline=None,
-            text=translator(f"Checksum failure; not a valid seed phrase."),
+            text=translator("Checksum failure; not a valid seed phrase."),
             show_back_button=False,
             button_data=button_data,
         )
@@ -401,7 +401,7 @@ class SeedDiscardView(View):
             WarningScreen,
             title=translator("Discard Seed?"),
             status_headline=None,
-            text=translator(f"Wipe seed {fingerprint} from the device?"),
+            text=translator("Wipe seed {fingerprint_} from the device?", fingerprint_=fingerprint),
             show_back_button=False,
             button_data=button_data,
         )
@@ -952,7 +952,7 @@ class SeedWordsView(View):
 
         if self.bip85_data is not None:
             mnemonic = self.seed.get_bip85_child_mnemonic(self.bip85_data["child_index"], self.bip85_data["num_words"]).split()
-            title = translator(f"""Child #{self.bip85_data["child_index"]}""")
+            title = translator("Child #{bip85_data_child_index}",bip85_data_child_index=self.bip85_data["child_index"])
         else:
             mnemonic = self.seed.mnemonic_display_list
             title = translator("Seed Words")
@@ -1087,8 +1087,8 @@ class SeedBIP85InvalidChildIndexView(View):
         DireWarningScreen(
             title=translator("BIP-85 Index Error"),
             show_back_button=False,
-            status_headline=translator(f"Invalid Child Index"),
-            text=translator(f"BIP-85 Child Index must be between 0 and {2**31-1}."),
+            status_headline=translator("Invalid Child Index"),
+            text=translator("BIP-85 Child Index must be between 0 and {calculate_BIP85_Child_Index}",calculate_BIP85_Child_Index=2**31-1),
             button_data=[translator("Try Again")]
         ).display()
 
@@ -1172,7 +1172,7 @@ class SeedWordsBackupTestView(View):
         random.shuffle(button_data)
 
         selected_menu_num = ButtonListScreen(
-            title=translator(f"Verify Word #{self.cur_index + 1}"),
+            title=translator("Verify Word #{cur_index_}",cur_index_=self.cur_index + 1),
             show_back_button=False,
             button_data=button_data,
             is_bottom_list=True,
@@ -1227,8 +1227,8 @@ class SeedWordsBackupTestMistakeView(View):
         selected_menu_num = DireWarningScreen(
             title=translator("Verification Error"),
             show_back_button=False,
-            status_headline=translator(f"Wrong Word!"),
-            text=translator(f"Word #{self.cur_index + 1} is not \"{self.wrong_word}\"!"),
+            status_headline=translator("Wrong Word!"),
+            text=translator("Word #{cur_index_} is not \"{wrong_word_}\"!",cur_index_=self.cur_index + 1,wrong_word_=self.wrong_word),
             button_data=button_data,
         ).display()
 
@@ -1940,14 +1940,14 @@ class SeedSignMessageStartView(View):
         # calculate the actual receive address
         addr_format = embit_utils.parse_derivation_path(derivation_path)
         if not addr_format["clean_match"]:
-            self.set_redirect(Destination(NotYetImplementedView, view_args=dict(text=translator(f"Signing messages for custom derivation paths not supported"))))
+            self.set_redirect(Destination(NotYetImplementedView, view_args=dict(text=translator("Signing messages for custom derivation paths not supported"))))
             self.controller.resume_main_flow = None
             return
 
         # Note: addr_format["network"] can be MAINNET or [TESTNET, REGTEST]
         if self.settings.get_value(SettingsConstants.SETTING__NETWORK) not in addr_format["network"]:
             from seedsigner.views.view import NetworkMismatchErrorView
-            self.set_redirect(Destination(NetworkMismatchErrorView, view_args=dict(text=translator(f"Current network setting ({self.settings.get_value_display_name(SettingsConstants.SETTING__NETWORK)}) doesn't match {self.derivation_path}"))))
+            self.set_redirect(Destination(NetworkMismatchErrorView, view_args=dict(text=translator("Current network setting ({SETTING__NETWORK_}) doesn't match {derivation_path_}",SETTING__NETWORK_=self.settings.get_value_display_name(SettingsConstants.SETTING__NETWORK),derivation_path_=self.derivation_path))))
 
             # cleanup. Note: We could leave this in place so the user can resume the
             # flow, but for now we avoid complications and keep things simple.
@@ -2032,7 +2032,7 @@ class SeedSignMessageConfirmAddressView(View):
                 addr_format["network"] = self.settings.get_value(SettingsConstants.SETTING__NETWORK)
             else:
                 from seedsigner.views.view import NetworkMismatchErrorView
-                self.set_redirect(Destination(NetworkMismatchErrorView, view_args=dict(text=translator(f"Current network setting ({self.settings.get_value_display_name(SettingsConstants.SETTING__NETWORK)}) doesn't match {self.derivation_path}"))))
+                self.set_redirect(Destination(NetworkMismatchErrorView, view_args=dict(text=translator("Current network setting ({SETTING__NETWORK_}) doesn't match {derivation_path_}",SETTING__NETWORK_=self.settings.get_value_display_name(SettingsConstants.SETTING__NETWORK),derivation_path_=self.derivation_path))))
 
                 # cleanup. Note: We could leave this in place so the user can resume the
                 # flow, but for now we avoid complications and keep things simple.
