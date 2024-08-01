@@ -1,4 +1,5 @@
 import math
+import logging
 import time
 
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ from seedsigner.gui.keyboard import Keyboard, TextEntryDisplay
 from seedsigner.hardware.buttons import HardwareButtons, HardwareButtonsConstants
 from seedsigner.views.language_views import translator
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class SeedMnemonicEntryScreen(BaseTopNavScreen):
@@ -845,17 +847,18 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
             keyboard_swap = False
 
             # Check our two possible exit conditions
+            # TODO: note the unusual return value, consider refactoring to a Response object in the future
             if input == HardwareButtonsConstants.KEY3:
                 # Save!
                 # First light up key3
                 self.hw_button3.is_selected = True
                 self.hw_button3.render()
                 self.renderer.show_image()
-                return self.passphrase
+                return dict(passphrase=self.passphrase)
 
             elif input == HardwareButtonsConstants.KEY_PRESS and self.top_nav.is_selected:
                 # Back button clicked
-                return self.top_nav.selected_button
+                return dict(passphrase=self.passphrase, is_back_button=True)
 
             # Check for keyboard swaps
             if input == HardwareButtonsConstants.KEY1:
@@ -1412,9 +1415,9 @@ class SeedAddressVerificationScreen(ButtonListScreen):
 
     def _run_callback(self):
         # Exit the screen on success via a non-None value
-        print(translator(f"verified_index: {self.verified_index.cur_count}"))
+        logger.info(translator(f"verified_index: {self.verified_index.cur_count}"))
         if self.verified_index.cur_count is not None:
-            print(translator("Screen callback returning success!"))
+            logger.info(translator("Screen callback returning success!"))
             self.threads[-1].stop()
             while self.threads[-1].is_alive():
                 time.sleep(0.01)
@@ -1520,6 +1523,7 @@ class SeedSignMessageConfirmMessageScreen(ButtonListScreen):
                 text=self.sign_message_data["message"],
                 width=renderer.canvas_width - 2*GUIConstants.EDGE_PADDING,
                 height=message_height,
+                allow_text_overflow=True,
             )
             self.sign_message_data["paged_message"] = paged
 

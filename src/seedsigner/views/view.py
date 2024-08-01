@@ -13,7 +13,8 @@ def translator(text):
     return LanguageTranslation(view_current_selected_language).translate(text)
 class BackStackView:
     """
-        {translator("Empty class that just signals to the Controller to pop the most recent View off the back_stack.")}
+        Empty class that just signals to the Controller to pop the most recent View off
+        the back_stack.
     """
     pass
 
