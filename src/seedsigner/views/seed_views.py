@@ -81,7 +81,7 @@ class SeedSelectSeedView(View):
     SCAN_SEED = (translator("Scan a seed"), SeedSignerIconConstants.QRCODE)
     TYPE_12WORD = (translator("Enter 12-word seed"), FontAwesomeIconConstants.KEYBOARD)
     TYPE_24WORD = (translator("Enter 24-word seed"), FontAwesomeIconConstants.KEYBOARD)
-    TYPE_ELECTRUM = ("Enter Electrum seed", FontAwesomeIconConstants.KEYBOARD)
+    TYPE_ELECTRUM = (translator("Enter Electrum seed"), FontAwesomeIconConstants.KEYBOARD)
 
     def __init__(self, flow: str = Controller.FLOW__VERIFY_SINGLESIG_ADDR):
         super().__init__()
@@ -170,7 +170,7 @@ class LoadSeedView(View):
     SEED_QR = (translator("Scan a SeedQR"), SeedSignerIconConstants.QRCODE)
     TYPE_12WORD = (translator("Enter 12-word seed"), FontAwesomeIconConstants.KEYBOARD)
     TYPE_24WORD = (translator("Enter 24-word seed"), FontAwesomeIconConstants.KEYBOARD)
-    TYPE_ELECTRUM = ("Enter Electrum seed", FontAwesomeIconConstants.KEYBOARD)
+    TYPE_ELECTRUM = (translator("Enter Electrum seed"), FontAwesomeIconConstants.KEYBOARD)
     CREATE = (translator("Create a seed"), SeedSignerIconConstants.PLUS)
 
     def run(self):
@@ -1031,8 +1031,8 @@ class SeedWordsView(View):
 
 
     def run(self):
-        NEXT = "Next"
-        DONE = "Done"
+        NEXT = translator("Next")
+        DONE = translator("Done")
 
         # Slice the mnemonic to our current 4-word section
         words_per_page = 4  # TODO: eventually make this configurable for bigger screens?
@@ -1543,7 +1543,7 @@ class SeedTranscribeSeedQRConfirmQRPromptView(View):
 
     def run(self):
         SCAN = (translator("Confirm SeedQR"), SeedSignerIconConstants.QRCODE)
-        DONE = "Done"
+        DONE = translator("Done")
         button_data = [SCAN, DONE]
 
         selected_menu_option = seed_screens.SeedTranscribeSeedQRConfirmQRPromptScreen(

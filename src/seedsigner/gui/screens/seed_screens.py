@@ -1218,6 +1218,7 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
             is_text_centered=True,
             screen_y=self.canvas_height - GUIConstants.BODY_FONT_SIZE - GUIConstants.COMPONENT_PADDING,
             height=GUIConstants.BODY_FONT_SIZE + GUIConstants.COMPONENT_PADDING,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ).render()
 
 
@@ -1328,6 +1329,7 @@ class SeedTranscribeSeedQRConfirmQRPromptScreen(ButtonListScreen):
             text=translator("Optionally scan your transcribed SeedQR to confirm that it reads back correctly."),
             screen_y=self.top_nav.height,
             height=self.buttons[0].screen_y - self.top_nav.height,
+            font_name=GUIConstants.BODY_FONT_NAME
         ))
 
 
@@ -1343,6 +1345,7 @@ class AddressVerificationSigTypeScreen(ButtonListScreen):
         self.components.append(TextArea(
             text=self.text,
             screen_y=self.top_nav.height,
+            font_name=GUIConstants.BODY_FONT_NAME
         ))
 
 
@@ -1358,6 +1361,7 @@ class SeedSelectSeedScreen(ButtonListScreen):
         self.components.append(TextArea(
             text=self.text,
             screen_y=self.top_nav.height,
+            font_name=GUIConstants.BODY_FONT_NAME
         ))
 
 
@@ -1405,6 +1409,7 @@ class SeedAddressVerificationScreen(ButtonListScreen):
             font_color=GUIConstants.LABEL_FONT_COLOR,
             is_text_centered=True,
             screen_y=self.components[-1].screen_y + self.components[-1].height + GUIConstants.COMPONENT_PADDING,
+            font_name=GUIConstants.BODY_FONT_NAME
         ))
 
         self.threads.append(SeedAddressVerificationScreen.ProgressThread(
@@ -1471,6 +1476,7 @@ class LoadMultisigWalletDescriptorScreen(ButtonListScreen):
             text=translator("Load your multisig wallet descriptor to verify your receive/self-transfer or change address."),
             screen_y=self.top_nav.height,
             height=self.buttons[0].screen_y - self.top_nav.height,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 
 
