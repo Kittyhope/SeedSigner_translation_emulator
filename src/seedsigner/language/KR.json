@@ -5,6 +5,7 @@
     "Scan a seed": "시드를 스캔하세요",
     "Enter 12-word seed": "12개의 시드 단어 입력",
     "Enter 24-word seed": "24개의 시드 단어 입력",
+    "Enter Electrum seed": "Electrum 시드 입력",
     "No PSBT currently loaded": "현재 PSBT가 로드되지 않았습니다",
     "(?)": "(?)",
     "Select Signer": "서명자 선택",

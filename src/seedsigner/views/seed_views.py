@@ -170,6 +170,7 @@ class LoadSeedView(View):
     SEED_QR = (translator("Scan a SeedQR"), SeedSignerIconConstants.QRCODE)
     TYPE_12WORD = (translator("Enter 12-word seed"), FontAwesomeIconConstants.KEYBOARD)
     TYPE_24WORD = (translator("Enter 24-word seed"), FontAwesomeIconConstants.KEYBOARD)
+    TYPE_ELECTRUM = ("Enter Electrum seed", FontAwesomeIconConstants.KEYBOARD)
     CREATE = (translator("Create a seed"), SeedSignerIconConstants.PLUS)
 
     def run(self):
