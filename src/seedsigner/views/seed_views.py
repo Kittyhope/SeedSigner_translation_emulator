@@ -302,7 +302,7 @@ class SeedMnemonicInvalidView(View):
 
 
 class SeedFinalizeView(View):
-    FINALIZE = "Done"
+    FINALIZE = translator("Done")
 
     def __init__(self):
         super().__init__()
@@ -357,8 +357,8 @@ class SeedAddPassphraseView(View):
             return Destination(SeedFinalizeView)
 
 class SeedAddPassphraseExitDialogView(View):
-    EDIT = "Edit passphrase"
-    DISCARD = ("Discard passphrase", None, None, "red")
+    EDIT = translator("Edit passphrase")
+    DISCARD = (translator("Discard passphrase"), None, None, "red")
 
     def __init__(self):
         super().__init__()
@@ -370,9 +370,9 @@ class SeedAddPassphraseExitDialogView(View):
         
         selected_menu_num = self.run_screen(
             WarningScreen,
-            title="Discard passphrase?",
+            title=translator("Discard passphrase?"),
             status_headline=None,
-            text=f"Your current passphrase entry will be erased",
+            text=translator("Your current passphrase entry will be erased"),
             show_back_button=False,
             button_data=button_data,
         )
@@ -390,8 +390,8 @@ class SeedReviewPassphraseView(View):
     """
         Display the completed passphrase back to the user.
     """
-    EDIT = "Edit passphrase"
-    DONE = "Done"
+    EDIT = translator("Edit passphrase")
+    DONE = translator("Done")
 
     def __init__(self):
         super().__init__()
@@ -495,7 +495,7 @@ class SeedElectrumMnemonicStartView(View):
     Views for actions on individual seeds:
 ****************************************************************************"""
 class SeedOptionsView(View):
-    SCAN_PSBT = ("Scan PSBT", SeedSignerIconConstants.QRCODE)
+    SCAN_PSBT = (translator("Scan PSBT"), SeedSignerIconConstants.QRCODE)
     VERIFY_ADDRESS = translator("Verify Addr")
     EXPORT_XPUB = translator("Export Xpub")
     EXPLORER = translator("Address Explorer")

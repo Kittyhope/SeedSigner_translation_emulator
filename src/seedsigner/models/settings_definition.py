@@ -604,6 +604,9 @@ class SettingsDefinition:
             (SettingsConstants.CUSTOM_DERIVATION, cls._translator("Custom Derivation")),
         ]
 
+        SettingsConstants.LABEL__BIP39_PASSPHRASE = cls._translator("BIP-39 Passphrase")
+        SettingsConstants.LABEL__CUSTOM_EXTENSION = cls._translator("Custom Extension")
+
         # settings_entries 업데이트
         for entry in cls.settings_entries:
             entry.display_name = cls._translator(entry.display_name)

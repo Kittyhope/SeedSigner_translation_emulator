@@ -533,7 +533,7 @@ class IconTextLine(BaseComponent):
             canvas=self.canvas,
             height=self.height,
             text=self.value_text,
-            font_name=GUIConstants.BODY_FONT_NAME,
+            font_name=self.font_name,
             font_size=self.font_size,
             edge_padding=0,
             is_text_centered=self.is_text_centered if not self.icon_name else False,

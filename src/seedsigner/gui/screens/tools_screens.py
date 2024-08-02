@@ -414,6 +414,7 @@ class ToolsAddressExplorerAddressTypeScreen(ButtonListScreen):
                     value_text=SettingsDefinition.get_settings_entry(attr_name=SettingsConstants.SETTING__SCRIPT_TYPES).get_selection_option_display_name_by_value(value=self.script_type),
                     screen_x=GUIConstants.EDGE_PADDING,
                     screen_y=self.components[-1].screen_y + self.components[-1].height + 2*GUIConstants.COMPONENT_PADDING,
+                    font_name=GUIConstants.BODY_FONT_NAME
                 ))
             else:
                 self.components.append(IconTextLine(
@@ -422,6 +423,7 @@ class ToolsAddressExplorerAddressTypeScreen(ButtonListScreen):
                     value_text=self.custom_derivation_path,
                     screen_x=GUIConstants.EDGE_PADDING,
                     screen_y=self.components[-1].screen_y + self.components[-1].height + 2*GUIConstants.COMPONENT_PADDING,
+                    font_name=GUIConstants.BODY_FONT_NAME
                 ))
 
         else:
