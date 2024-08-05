@@ -341,7 +341,7 @@ class NetworkMismatchErrorView(ErrorView):
         next_destination: Destination = None
         super().__post_init__()
         if not self.text:
-            self.text = f"Current network setting ({self.settings.get_value_display_name(SettingsConstants.SETTING__NETWORK)}) doesn't match current action."
+            self.text = translator("Current network setting ({network_setting_}) doesn't match current action.",network_setting_=self.settings.get_value_display_name(SettingsConstants.SETTING__NETWORK))
 
         if not self.next_destination:
             from seedsigner.views.settings_views import SettingsEntryUpdateSelectionView

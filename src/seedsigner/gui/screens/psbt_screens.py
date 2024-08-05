@@ -670,6 +670,7 @@ class PSBTChangeDetailsScreen(ButtonListScreen):
             icon_color=GUIConstants.INFO_COLOR,
             value_text=f"""{translator("Multisig") if self.is_multisig else self.fingerprint}: {translator("Change") if self.is_change_derivation_path else translator("Addr")} #{self.derivation_path_addr_index}""",
             is_text_centered=False,
+            font_name=GUIConstants.REGULAR_FONT_NAME,
             screen_x=GUIConstants.EDGE_PADDING,
             screen_y=screen_y,
         ))
@@ -679,6 +680,7 @@ class PSBTChangeDetailsScreen(ButtonListScreen):
                 icon_name=SeedSignerIconConstants.SUCCESS,
                 icon_color=GUIConstants.SUCCESS_COLOR,
                 value_text=translator("Address verified!"),
+                font_name=GUIConstants.REGULAR_FONT_NAME,
                 is_text_centered=False,
                 screen_x=GUIConstants.EDGE_PADDING,
                 screen_y=self.components[-1].screen_y + self.components[-1].height + GUIConstants.COMPONENT_PADDING,
@@ -756,6 +758,7 @@ class PSBTFinalizeScreen(ButtonListScreen):
 
         self.components.append(TextArea(
             text=translator("Click to authorize this transaction"),
-            screen_y=icon.screen_y + icon.height + GUIConstants.COMPONENT_PADDING
+            screen_y=icon.screen_y + icon.height + GUIConstants.COMPONENT_PADDING,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 

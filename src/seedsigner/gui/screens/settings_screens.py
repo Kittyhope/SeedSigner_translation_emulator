@@ -332,5 +332,6 @@ class SettingsQRConfirmationScreen(ButtonListScreen):
             text=self.status_message,
             is_text_centered=True,
             auto_line_break=True,
-            screen_y=start_y
+            screen_y=start_y,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))

@@ -599,7 +599,8 @@ class SettingsDefinition:
 
         SettingsConstants.ALL_SCRIPT_TYPES = [
             (SettingsConstants.NATIVE_SEGWIT, cls._translator("Native Segwit")),
-            (SettingsConstants.NESTED_SEGWIT, cls._translator("Nested Segwit (legacy)")),
+            (SettingsConstants.NESTED_SEGWIT, cls._translator("Nested Segwit")),
+            (SettingsConstants.LEGACY_P2PKH, cls._translator("Legacy")),
             (SettingsConstants.TAPROOT, cls._translator("Taproot")),
             (SettingsConstants.CUSTOM_DERIVATION, cls._translator("Custom Derivation")),
         ]

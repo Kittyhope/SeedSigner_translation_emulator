@@ -969,6 +969,7 @@ class WarningScreen(WarningEdgesMixin, LargeIconStatusScreen):
     status_icon_name: str = SeedSignerIconConstants.WARNING
     status_color: str = "yellow"
     status_headline: str = field(default="Privacy Leak!")     # The colored text under the alert icon
+    text: str = ""
 
     def __post_init__(self):
         self.title = translator(self.title)
@@ -976,6 +977,11 @@ class WarningScreen(WarningEdgesMixin, LargeIconStatusScreen):
             self.status_headline = translator(self.status_headline)
         if not self.button_data:
             self.button_data = [translator("I Understand")]
+        if self.text:
+            TextArea(
+                text=self.text,
+                font_name=GUIConstants.REGULAR_FONT_NAME,
+            ).render()
 
         super().__post_init__()
 
