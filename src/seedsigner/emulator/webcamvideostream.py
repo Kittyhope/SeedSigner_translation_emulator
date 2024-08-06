@@ -7,7 +7,7 @@ import cv2
 class WebcamVideoStream:
 	def __init__(self, resolution=(320, 240), framerate=32, format="bgr", **kwargs):
 		# initialize the camera
-		self.camera = cv2.VideoCapture(0)
+		self.camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 		self.set_resolution(resolution)
 				
 		# initialize the frame and the variable used to indicate

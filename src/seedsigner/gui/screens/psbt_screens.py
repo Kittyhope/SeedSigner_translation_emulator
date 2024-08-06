@@ -544,7 +544,7 @@ class PSBTMathScreen(ButtonListScreen):
             cur_y,
             f" {self.input_amount}",
             # info_text=f""" {self.num_inputs} input{"s" if self.num_inputs > 1 else ""}""",
-            info_text=f""" input{"s" if self.num_inputs > 1 else ""}""",
+            info_text=translator(" input{plural_}",plural_=translator("s") if self.num_inputs > 1 else ""),
         )
 
         # spend_amount will be zero on self-transfers; only display when there's an
@@ -555,14 +555,14 @@ class PSBTMathScreen(ButtonListScreen):
                 cur_y,
                 f"-{self.spend_amount}",
                 # info_text=f""" {self.num_recipients} recipient{"s" if self.num_recipients > 1 else ""}""",
-                info_text=f""" recipient{"s" if self.num_recipients > 1 else ""}""",
+                info_text=translator(" recipient{plural_}",plural_=translator("s") if self.num_inputs > 1 else ""),
             )
 
         cur_y += digits_height + GUIConstants.BODY_LINE_SPACING * ssf
         render_amount(
             cur_y,
             f"-{self.fee_amount}",
-            info_text=f""" fee""",
+            info_text=translator(" fee"),
         )
 
         cur_y += digits_height + GUIConstants.BODY_LINE_SPACING * ssf
@@ -572,7 +572,7 @@ class PSBTMathScreen(ButtonListScreen):
         render_amount(
             cur_y,
             f" {self.change_amount}",
-            info_text=f" {denomination} change",
+            info_text=translator(" {denomination_} change",denomination_=denomination),
             info_text_color="darkorange"  # super-sampling alters the perceived color
         )
 
