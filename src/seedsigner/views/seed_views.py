@@ -480,9 +480,9 @@ class SeedElectrumMnemonicStartView(View):
     def run(self):
         self.run_screen(
                 WarningScreen,
-                title="Electrum warning",
+                title=translator("Electrum warning"),
                 status_headline=None,
-                text=f"Some features are disabled for Electrum seeds.",
+                text=translator("Some features are disabled for Electrum seeds."),
                 show_back_button=False,
         )
 

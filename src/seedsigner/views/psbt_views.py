@@ -16,7 +16,7 @@ class PSBTSelectSeedView(View):
     SCAN_SEED = (translator("Scan a seed"), SeedSignerIconConstants.QRCODE)
     TYPE_12WORD = (translator("Enter 12-word seed"), FontAwesomeIconConstants.KEYBOARD)
     TYPE_24WORD = (translator("Enter 24-word seed"), FontAwesomeIconConstants.KEYBOARD)
-    TYPE_ELECTRUM = ("Enter Electrum seed", FontAwesomeIconConstants.KEYBOARD)
+    TYPE_ELECTRUM = (translator("Enter Electrum seed"), FontAwesomeIconConstants.KEYBOARD)
 
     def run(self):
         # Note: we can't just autoroute to the PSBT Overview because we might have a

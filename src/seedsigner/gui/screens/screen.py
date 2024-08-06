@@ -152,6 +152,7 @@ class LoadingScreenThread(BaseThread):
                     text=self.text,
                     font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE,
                     screen_y=int((renderer.canvas_height - bounding_box[3])/2),
+                    font_name=GUIConstants.TOP_NAV_TITLE_FONT_NAME
                 ).render()
 
         while self.keep_running:

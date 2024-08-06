@@ -671,7 +671,7 @@ class ToolsAddressExplorerAddressListView(View):
             title=translator("{} Addrs").format("Receive" if not self.is_change else "Change"),
             button_data=button_data,
             button_font_name=GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME,
-            button_font_size=GUIConstants.BUTTON_FONT_SIZE + 4,
+            button_font_size=GUIConstants.BUTTON_FONT_SIZE + 2,
             is_button_text_centered=False,
             is_bottom_list=True,
             selected_button=self.selected_button_index,

@@ -470,7 +470,7 @@ class PSBTMathScreen(ButtonListScreen):
         super().__post_init__()
 
         if self.input_amount > 1e6:
-            denomination = translator("btc")
+            denomination = translator(" btc")
             self.input_amount /= 1e8
             self.spend_amount /= 1e8
             self.change_amount /= 1e8
@@ -482,7 +482,7 @@ class PSBTMathScreen(ButtonListScreen):
             # lines up properly.
             self.fee_amount = f"{self.fee_amount:10}"
         else:
-            denomination = translator("sats")
+            denomination = translator(" sats")
             self.input_amount = f"{self.input_amount:,}"
             self.spend_amount = f"{self.spend_amount:,}"
             self.fee_amount = f"{self.fee_amount:,}"
@@ -524,7 +524,7 @@ class PSBTMathScreen(ButtonListScreen):
             # secondary_digit_color = GUIConstants.BODY_FONT_COLOR
             # tertiary_digit_color = GUIConstants.BODY_FONT_COLOR
             # digit_group_spacing = 0
-            if denomination == 'btc':
+            if denomination == translator(' btc'):
                 display_str = amount_str
                 main_zone = display_str[:-6]
                 mid_zone = display_str[-6:-3]

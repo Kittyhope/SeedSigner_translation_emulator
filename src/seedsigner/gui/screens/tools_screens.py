@@ -176,8 +176,9 @@ class ToolsCalcFinalWordFinalizePromptScreen(ButtonListScreen):
         super().__post_init__()
 
         self.components.append(TextArea(
-            text=translator(f"The {self.mnemonic_length}th word is built from {self.num_entropy_bits} more entropy bits plus auto-calculated checksum."),
+            text=translator("The {mnemonic_length_}th word is built from {num_entropy_bits_} more entropy bits plus auto-calculated checksum.",mnemonic_length_=self.mnemonic_length,num_entropy_bits_=self.num_entropy_bits),
             screen_y=self.top_nav.height + int(GUIConstants.COMPONENT_PADDING/2),
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 
 
@@ -186,7 +187,7 @@ class ToolsCalcFinalWordFinalizePromptScreen(ButtonListScreen):
 class ToolsCoinFlipEntryScreen(KeyboardScreen):
     def __post_init__(self):
         # Override values set by the parent class
-        self.title = translator(f"Coin Flip 1/{self.return_after_n_chars}")
+        self.title = translator("Coin Flip 1/{return_after_n_chars_}",return_after_n_chars_=self.return_after_n_chars)
 
         # Specify the keys in the keyboard
         self.rows = 1
@@ -198,17 +199,19 @@ class ToolsCoinFlipEntryScreen(KeyboardScreen):
         super().__post_init__()
     
         self.components.append(TextArea(
-            text="Heads = 1",
+            text=translator("Heads = 1"),
             screen_y = self.keyboard.rect[3] + 4*GUIConstants.COMPONENT_PADDING,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
         self.components.append(TextArea(
-            text="Tails = 0",
+            text=translator("Tails = 0"),
             screen_y = self.components[-1].screen_y + self.components[-1].height + GUIConstants.COMPONENT_PADDING,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 
 
     def update_title(self) -> bool:
-        self.title = translator(f"Coin Flip {self.cursor_position + 1}/{self.return_after_n_chars}")
+        self.title = translator("Coin Flip {cursor_position_}/{return_after_n_chars_}",cursor_position_=self.cursor_position + 1,return_after_n_chars_=self.return_after_n_chars)
         return True
 
 
@@ -250,9 +253,10 @@ class ToolsCalcFinalWordScreen(ButtonListScreen):
             discard_selected_bits = "_" * (len(self.checksum_bits))
 
         self.components.append(TextArea(
-            text=translator(f"""Your input: \"{selection_text}\""""),
+            text=translator("Your input: \"{selection_text_}\"",selection_text_=selection_text),
             screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING - 2,  # Nudge to last line doesn't get too close to "Next" button
             height_ignores_below_baseline=True,  # Keep the next line (bits display) snugged up, regardless of text rendering below the baseline
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 
         # ...and that entropy's associated 11 bits
@@ -288,6 +292,7 @@ class ToolsCalcFinalWordScreen(ButtonListScreen):
             text=translator("Checksum"),
             edge_padding=0,
             screen_y=first_bits_line.screen_y + first_bits_line.height + 2*GUIConstants.COMPONENT_PADDING,
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 
         # ...and its actual bits. Prepend spacers to keep vertical alignment
@@ -321,9 +326,10 @@ class ToolsCalcFinalWordScreen(ButtonListScreen):
 
         # And now the *actual* final word after merging the bit data
         self.components.append(TextArea(
-            text=translator(f"""Final Word: \"{self.actual_final_word}\""""),
+            text=translator("Final Word: \"{actual_final_word_}\"",actual_final_word_=self.actual_final_word),
             screen_y=self.components[-1].screen_y + self.components[-1].height + 2*GUIConstants.COMPONENT_PADDING,
             height_ignores_below_baseline=True,  # Keep the next line (bits display) snugged up, regardless of text rendering below the baseline
+            font_name=GUIConstants.REGULAR_FONT_NAME
         ))
 
         # Once again show the bits that came from the user's entropy...
@@ -362,7 +368,7 @@ class ToolsCalcFinalWordDoneScreen(ButtonListScreen):
 
     def __post_init__(self):
         # Customize defaults
-        self.title = translator(f"{self.mnemonic_word_length}th Word")
+        self.title = translator("{mnemonic_word_length_}th Word",mnemonic_word_length_=self.mnemonic_word_length)
         self.is_bottom_list = True
 
         super().__post_init__()
