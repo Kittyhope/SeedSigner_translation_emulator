@@ -220,7 +220,7 @@ class SDCardStateChangeToastManagerThread(BaseToastOverlayManagerThread):
         from seedsigner.hardware.microsd import MicroSD
         if action not in [MicroSD.ACTION__INSERTED, MicroSD.ACTION__REMOVED]:
             raise Exception(f"Invalid MicroSD action: {action}")
-        self.message = "SD card removed" if action == MicroSD.ACTION__REMOVED else "SD card inserted"
+        self.message = translator("SD card removed") if action == MicroSD.ACTION__REMOVED else translator("SD card inserted")
 
         super().__init__(*args, **kwargs)
 

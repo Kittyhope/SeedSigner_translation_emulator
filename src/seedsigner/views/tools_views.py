@@ -39,7 +39,6 @@ class ToolsMenuView(View):
             title=translator("Tools"),
             is_button_text_centered=False,
             button_data=button_data,
-            button_font_size=GUIConstants.BUTTON_FONT_SIZE-2
         )
 
         if selected_menu_num == RET_CODE__BACK_BUTTON:
