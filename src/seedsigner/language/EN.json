@@ -351,6 +351,8 @@
     "< back | click joystick": "< back | click joystick",
     "< reshoot | accept >": "< reshoot | accept >",
     "Dice Roll": "Dice Roll",
+    "Dice Roll 1/{return_after_n_chars_}": "Dice Roll 1/{return_after_n_chars_}",
+    "Dice Roll {cursor_position_}/{return_after_n_chars_}": "Dice Roll {cursor_position_}/{return_after_n_chars_}",
     "Build Final Word": "Build Final Word",
     "The {mnemonic_length}th word is built from {num_entropy_bits} more entropy bits plus auto-calculated checksum.": "The {mnemonic_length}th word is built from {num_entropy_bits} more entropy bits plus auto-calculated checksum.",
     "{mnemonic_word_length}th Word": "{mnemonic_word_length}th Word",

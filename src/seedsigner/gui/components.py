@@ -13,7 +13,7 @@ from typing import List, Tuple
 from seedsigner.models.settings import Settings
 from seedsigner.models.settings_definition import SettingsConstants
 from seedsigner.models.singleton import Singleton
-
+components_current_selected_language="EN"
 logger = logging.getLogger(__name__)
 
 # TODO: Remove all pixel hard coding
@@ -1344,13 +1344,53 @@ def reflow_text_for_width(text: str,
                           font_size=GUIConstants.BODY_FONT_SIZE,
                           allow_text_overflow: bool=False) -> list[dict]:
     """
-    Reflows text to fit within `width` by breaking long lines up.
+    Reflows text to fit within `width` by breaking long lines up, handling different languages.
 
     Returns a List with each reflowed line of text as its own entry.
 
     Note: It is up to the calling code to handle any height considerations for the 
     resulting lines of text.
-    """
+    """    
+
+    if components_current_selected_language in ["JP", "SC", "TC"]:  # Include TC for Traditional Chinese
+        return reflow_text_no_spaces(text, width, font_name, font_size, allow_text_overflow)
+    else:
+        return reflow_text_with_spaces(text, width, font_name, font_size, allow_text_overflow)
+
+def reflow_text_no_spaces(text: str, width: int, font_name, font_size, allow_text_overflow: bool) -> list[dict]:
+
+    font = Fonts.get_font(font_name=font_name, size=font_size)
+    text_lines = []
+    
+    current_line = ""
+    current_width = 0
+    
+    for char in text:
+        if char == '\n':
+            text_lines.append({"text": current_line, "text_width": current_width})
+            current_line = ""
+            current_width = 0
+            continue
+
+        char_width = font.getbbox(char, anchor="ls")[2]  # Get the width of the character
+        
+        if current_width + char_width > width:
+            # If adding this character would exceed the width, add the current line to text_lines
+            text_lines.append({"text": current_line, "text_width": current_width})
+            current_line = char
+            current_width = char_width
+        else:
+            # Otherwise, add the character to the current line
+            current_line += char
+            current_width += char_width
+    
+    # Add any remaining text as the last line
+    if current_line:
+        text_lines.append({"text": current_line, "text_width": current_width}) 
+
+    return text_lines   
+
+def reflow_text_with_spaces(text: str, width: int, font_name, font_size, allow_text_overflow: bool) -> list[dict]:
     # We have to figure out if and where to make line breaks in the text so that it
     #   fits in its bounding rect (plus accounting for edge padding) using its given
     #   font.

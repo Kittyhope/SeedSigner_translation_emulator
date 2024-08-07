@@ -351,6 +351,8 @@
     "< back | click joystick": "< 뒤로 | 조이스틱 클릭",
     "< reshoot | accept >": "< 다시 촬영 | 수락 >",
     "Dice Roll": "주사위 굴리기",
+    "Dice Roll 1/{return_after_n_chars_}": "주사위 굴리기 1/{return_after_n_chars_}",
+    "Dice Roll {cursor_position_}/{return_after_n_chars_}": "주사위 굴리기 {cursor_position_}/{return_after_n_chars_}",
     "Build Final Word": "최종 단어 구성",
     "The {mnemonic_length_}th word is built from {num_entropy_bits_} more entropy bits plus auto-calculated checksum.": "{mnemonic_length_}번째 단어는 {num_entropy_bits_}개의 추가 엔트로피 비트와 자동 계산된 체크섬으로 구성됩니다.",
     "{mnemonic_word_length_}th Word": "{mnemonic_word_length_}번째 단어",

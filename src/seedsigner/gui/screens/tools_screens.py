@@ -128,7 +128,7 @@ class ToolsImageEntropyFinalImageScreen(BaseScreen):
 class ToolsDiceEntropyEntryScreen(KeyboardScreen):
     def __post_init__(self):
         # Override values set by the parent class
-        self.title = translator(f"Dice Roll 1/{self.return_after_n_chars}")
+        self.title = translator("Dice Roll 1/{return_after_n_chars_}",return_after_n_chars_=self.return_after_n_chars)
 
         # Specify the keys in the keyboard
         self.rows = 3
@@ -159,7 +159,7 @@ class ToolsDiceEntropyEntryScreen(KeyboardScreen):
     
 
     def update_title(self) -> bool:
-        self.title = translator(f"Dice Roll {self.cursor_position + 1}/{self.return_after_n_chars}")
+        self.title = translator("Dice Roll {cursor_position_}/{return_after_n_chars_}",return_after_n_chars_=self.return_after_n_chars,cursor_position_=self.cursor_position + 1)
         return True
 
 
