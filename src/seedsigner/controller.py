@@ -15,8 +15,7 @@ from seedsigner.models.singleton import Singleton
 from seedsigner.models.threads import BaseThread
 from seedsigner.views.screensaver import ScreensaverScreen
 from seedsigner.views.view import Destination
-
-from seedsigner.views.language_views import LanguageSelectionView, translator # 추가
+from seedsigner.views.language_views import LanguageSelectionView
 
 
 logger = logging.getLogger(__name__)
@@ -72,6 +71,16 @@ class BackgroundImportThread(BaseThread):
         from seedsigner.models.seed_storage import SeedStorage
         Controller.get_instance()._storage = SeedStorage()
 
+        # Get MainMenuView ready to respond quickly
+        time_import('seedsigner.views.scan_views')
+
+        time_import('seedsigner.views.seed_views')
+
+        time_import('seedsigner.views.tools_views')
+
+        time_import('seedsigner.views.settings_views')
+
+
 
 class Controller(Singleton):
     """
@@ -92,8 +101,6 @@ class Controller(Singleton):
     """
 
     VERSION = "0.8.0-rc1"
-
-    FIRST_BOOT_FLAG = True  # 첫 부팅 여부를 확인하는 플래그 추가
 
     # Declare class member vars with type hints to enable richer IDE support throughout
     # the code.
@@ -131,6 +138,7 @@ class Controller(Singleton):
     back_stack: BackStack = None
     screensaver: ScreensaverScreen = None
     toast_notification_thread: BaseToastOverlayManagerThread = None
+
 
     @classmethod
     def get_instance(cls):
@@ -182,11 +190,9 @@ class Controller(Singleton):
 
         # Other behavior constants
         controller.screensaver_activation_ms = 2 * 60 * 1000  # two minutes
-    
-        background_import_thread = BackgroundImportThread()
-        background_import_thread.start()
 
         return cls._instance
+
 
     @property
     def camera(self):
@@ -244,6 +250,10 @@ class Controller(Singleton):
         from seedsigner.gui.toast import RemoveSDCardToastManagerThread
 
         OpeningSplashScreen().start()
+        LanguageSelectionView().run()
+        background_import_thread = BackgroundImportThread()
+        background_import_thread.start()
+
 
         """ Class references can be stored as variables in python!
 
@@ -274,10 +284,10 @@ class Controller(Singleton):
             if initial_destination:
                 next_destination = initial_destination
             else:
-                if Controller.FIRST_BOOT_FLAG:
-                    next_destination = Destination(LanguageSelectionView) # 추가
-                else:
-                    next_destination = Destination(MainMenuView)
+                next_destination = Destination(MainMenuView)
+            
+            # Set up our one-time toast notification tip to remove the SD card
+            self.activate_toast(RemoveSDCardToastManagerThread())
 
             while True:
                 # Destination(None) is a special case; render the Home screen
@@ -296,11 +306,6 @@ class Controller(Singleton):
                     self.psbt = None
                     self.psbt_parser = None
                     self.psbt_seed = None
-
-                    # 언어 선택 화면이 끝난 후 SD 카드 제거 문구가 나오도록 설정
-                    if Controller.FIRST_BOOT_FLAG:
-                        Controller.FIRST_BOOT_FLAG = False  # 첫 부팅 이후로는 플래그를 False로 설정 추가
-                        self.activate_toast(RemoveSDCardToastManagerThread())
                 
                 logger.info(f"\nback_stack: {self.back_stack}")
 

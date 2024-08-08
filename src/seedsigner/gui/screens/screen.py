@@ -1,7 +1,8 @@
+import os
 import time
 
 from dataclasses import dataclass, field
-from PIL import Image, ImageDraw, ImageColor
+from PIL import Image, ImageDraw, ImageColor, ImageFont
 from typing import Any, List, Tuple
 
 from seedsigner.gui.components import (GUIConstants,
@@ -316,6 +317,8 @@ class ButtonListScreen(BaseTopNavScreen):
                 elif len(button_label) == 5:
                     (button_label, icon_name, icon_color, button_label_color, right_icon_name) = button_label
 
+            adjusted_font_size = self.adjust_font_size(button_label, icon_name)
+
             button_kwargs = dict(
                 text=button_label,
                 icon_name=icon_name,
@@ -329,7 +332,7 @@ class ButtonListScreen(BaseTopNavScreen):
                 height=button_height,
                 is_text_centered=self.is_button_text_centered,
                 font_name=GUIConstants.BUTTON_FONT_NAME,
-                font_size=self.button_font_size,
+                font_size=adjusted_font_size,
                 font_color=button_label_color if button_label_color else GUIConstants.BUTTON_FONT_COLOR,
                 selected_color=self.button_selected_color
             )
@@ -356,6 +359,25 @@ class ButtonListScreen(BaseTopNavScreen):
 
         cur_selected_button = self.buttons[self.selected_button]
         cur_selected_button.is_selected = True
+
+    def adjust_font_size(self, text, icon_name):
+        max_width = self.canvas_width - (2 * GUIConstants.EDGE_PADDING)
+        if icon_name:
+            icon = Icon(
+                icon_name=icon_name,
+                icon_size=GUIConstants.ICON_FONT_SIZE
+            )
+            icon_horizontal_spacer = GUIConstants.COMPONENT_PADDING
+            max_width -= icon.width + icon_horizontal_spacer + 10
+        font_size_sub = self.button_font_size
+        file_path_ = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'resources', 'fonts',f'NotoSans{screen_current_selected_language}-SemiBold.ttf')
+        font_sub = ImageFont.truetype(file_path_, font_size_sub)
+        while font_sub.getlength(text) > max_width and font_size_sub > GUIConstants.BODY_FONT_MIN_SIZE:
+            font_size_sub -= 1
+            font_sub = ImageFont.truetype(file_path_, font_size_sub)
+
+
+        return font_size_sub
 
 
     def _render(self):
