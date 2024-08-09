@@ -41,7 +41,6 @@ class LanguageSelectionScreen(BaseScreen):
             'Japaneese': ImageFont.truetype(os.path.join(font_dir, 'NotoSansJP-SemiBold.ttf'), GUIConstants.BODY_FONT_MAX_SIZE),
             'Chineese': ImageFont.truetype(os.path.join(font_dir, 'NotoSansSC-SemiBold.ttf'), GUIConstants.BODY_FONT_MAX_SIZE),
             'Hongkong': ImageFont.truetype(os.path.join(font_dir, 'NotoSansHK-SemiBold.ttf'), GUIConstants.BODY_FONT_MAX_SIZE),
-            'Italic': ImageFont.truetype(os.path.join(font_dir, 'NotoSansIT-SemiBold.ttf'), GUIConstants.BODY_FONT_MAX_SIZE)
         }
 
         # Create a list of languages
@@ -79,8 +78,6 @@ class LanguageSelectionScreen(BaseScreen):
                 button.font = fonts['Chineese']
             elif language == "香港":
                 button.font = fonts['Hongkong']
-            elif language == "Italic":
-                button.font = fonts['Italic']
             else:
                 button.font = fonts['English']  # 기본 폰트는 English로 설정
             self.language_buttons.append(button)

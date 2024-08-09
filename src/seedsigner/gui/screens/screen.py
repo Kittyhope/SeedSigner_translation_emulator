@@ -361,21 +361,20 @@ class ButtonListScreen(BaseTopNavScreen):
         cur_selected_button.is_selected = True
 
     def adjust_font_size(self, text, icon_name):
-        max_width = self.canvas_width - (2 * GUIConstants.EDGE_PADDING)
+        max_width = self.canvas_width - (2 * GUIConstants.EDGE_PADDING) - (2 *GUIConstants.COMPONENT_PADDING)
         if icon_name:
             icon = Icon(
                 icon_name=icon_name,
-                icon_size=GUIConstants.ICON_FONT_SIZE
+                icon_size=GUIConstants.ICON_INLINE_FONT_SIZE
             )
-            icon_horizontal_spacer = GUIConstants.COMPONENT_PADDING
-            max_width -= icon.width + icon_horizontal_spacer + 10
+            icon_padding_ = GUIConstants.COMPONENT_PADDING
+            max_width -= icon.width + icon_padding_
         font_size_sub = self.button_font_size
-        file_path_ = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'resources', 'fonts',f'NotoSans{screen_current_selected_language}-SemiBold.ttf')
+        file_path_ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'resources', 'fonts',f'{GUIConstants.BUTTON_FONT_NAME}.ttf'))
         font_sub = ImageFont.truetype(file_path_, font_size_sub)
         while font_sub.getlength(text) > max_width and font_size_sub > GUIConstants.BODY_FONT_MIN_SIZE:
             font_size_sub -= 1
             font_sub = ImageFont.truetype(file_path_, font_size_sub)
-
 
         return font_size_sub
 

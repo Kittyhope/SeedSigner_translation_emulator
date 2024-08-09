@@ -37,11 +37,11 @@ class LanguageSelectionView(View):
         components.components_current_selected_language=current_selected_language
 
         translator = LanguageTranslation(current_selected_language).translate
-
-        GUIConstants.TOP_NAV_TITLE_FONT_NAME = f'NotoSans{current_selected_language}-SemiBold'
-        GUIConstants.BODY_FONT_NAME = f'NotoSans{current_selected_language}-SemiBold'
-        GUIConstants.BUTTON_FONT_NAME = f'NotoSans{current_selected_language}-SemiBold'
-        GUIConstants.REGULAR_FONT_NAME = f'NotoSans{current_selected_language}-Regular'
+        font_current_selected_language= current_selected_language if current_selected_language in ("KR", "SC", "JP") else "EN"
+        GUIConstants.TOP_NAV_TITLE_FONT_NAME = f'NotoSans{font_current_selected_language}-SemiBold'
+        GUIConstants.BODY_FONT_NAME = f'NotoSans{font_current_selected_language}-SemiBold'
+        GUIConstants.BUTTON_FONT_NAME = f'NotoSans{font_current_selected_language}-SemiBold'
+        GUIConstants.REGULAR_FONT_NAME = f'NotoSans{font_current_selected_language}-Regular'
 
         settings_definition.SettingsDefinition.set_language(current_selected_language)
         
