@@ -55,7 +55,7 @@
     "QRCode not recognized or not yet supported.": "QR 코드가 인식되지 않았거나 아직 지원되지 않습니다.",
     "Error": "오류",
     "Wrong QR Type": "잘못된 QR 유형",
-    "received \"{qr_type_}\" format": "{qr_type_} 형식을 받았습니다",
+    "received \"{qr_type_}\" format": "\"{qr_type_}\" 형식을 받았습니다",
     "Back": "뒤로",
     "Not yet implemented!": "아직 구현되지 않았습니다!",
     "Scan PSBT": "PSBT 스캔",

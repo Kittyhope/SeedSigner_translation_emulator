@@ -307,47 +307,55 @@ class TextArea(BaseComponent):
 
         self.line_spacing = GUIConstants.BODY_LINE_SPACING
 
-        # We have to figure out if and where to make line breaks in the text so that it
-        #   fits in its bounding rect (plus accounting for edge padding) using its given
-        #   font.
-        # Do initial calcs without worrying about supersampling.
-        self.text_lines = reflow_text_for_width(
-            text=self.text,
-            width=self.width - 2*self.edge_padding,
-            font_name=self.font_name,
-            font_size=self.font_size,
-            allow_text_overflow=self.allow_text_overflow,
-        )
+        current_font_size_ = self.font_size
+        min_font_size_ = max(1, self.font_size-4)
 
-        # Calculate the actual font height from the "baseline" anchor ("_s")
-        font = Fonts.get_font(self.font_name, self.font_size)
+        while current_font_size_ > min_font_size_:
+            # We have to figure out if and where to make line breaks in the text so that it
+            #   fits in its bounding rect (plus accounting for edge padding) using its given
+            #   font.
+            # Do initial calcs without worrying about supersampling.
+            self.text_lines = reflow_text_for_width(
+                text=self.text,
+                width=self.width - 2*self.edge_padding-self.min_text_x,
+                font_name=self.font_name,
+                font_size=current_font_size_,
+                allow_text_overflow=self.allow_text_overflow,
+            )
 
-        # Note: from the baseline anchor, `top` is a negative number while `bottom`
-        # conveys the height of the pixels that rendered below the baseline, if any
-        # (e.g. "py" in "python").
-        (left, top, right, bottom) = font.getbbox(self.text, anchor="ls")
-        self.text_height_above_baseline = -1 * top
-        self.text_height_below_baseline = bottom
+            # Calculate the actual font height from the "baseline" anchor ("_s")
+            font = Fonts.get_font(self.font_name, current_font_size_)
 
-        # Initialize the text rendering relative to the baseline
-        self.text_y = self.text_height_above_baseline
+            # Note: from the baseline anchor, `top` is a negative number while `bottom`
+            # conveys the height of the pixels that rendered below the baseline, if any
+            # (e.g. "py" in "python").
+            (left, top, right, bottom) = font.getbbox(self.text, anchor="ls")
+            self.text_height_above_baseline = -1 * top
+            self.text_height_below_baseline = bottom
 
-        # Other components, like IconTextLine will need to know how wide the actual
-        # rendered text will be, separate from the TextArea's defined overall `width`.
-        self.text_width = max(line["text_width"] for line in self.text_lines)
+            # Initialize the text rendering relative to the baseline
+            self.text_y = self.text_height_above_baseline
 
-        # Calculate the actual height
-        if len(self.text_lines) == 1:
-            total_text_height = self.text_height_above_baseline
-            if not self.height_ignores_below_baseline:
-                total_text_height += self.text_height_below_baseline
-        else:
-            # Multiply for the number of lines plus the spacer
-            total_text_height = self.text_height_above_baseline * len(self.text_lines) + self.line_spacing * (len(self.text_lines) - 1)
+            # Other components, like IconTextLine will need to know how wide the actual
+            # rendered text will be, separate from the TextArea's defined overall `width`.
+            self.text_width = max(line["text_width"] for line in self.text_lines)
 
-            if not self.height_ignores_below_baseline and re.findall(f"[gjpqy]", self.text_lines[-1]["text"]):
-                # Last line has at least one char that dips below baseline
-                total_text_height += self.text_height_below_baseline
+            # Calculate the actual height
+            if len(self.text_lines) == 1:
+                total_text_height = self.text_height_above_baseline
+                if not self.height_ignores_below_baseline:
+                    total_text_height += self.text_height_below_baseline
+            else:
+                # Multiply for the number of lines plus the spacer
+                total_text_height = self.text_height_above_baseline * len(self.text_lines) + self.line_spacing * (len(self.text_lines) - 1)
+
+                if not self.height_ignores_below_baseline and re.findall(f"[gjpqy]", self.text_lines[-1]["text"]):
+                    # Last line has at least one char that dips below baseline
+                    total_text_height += self.text_height_below_baseline
+            if self.height is None or total_text_height <= self.height:
+                break
+            else:
+                current_font_size_ -= 1
 
         if self.height is None:
             # Autoscale height to text lines
@@ -364,6 +372,8 @@ class TextArea(BaseComponent):
             else:
                 # Vertically center the text's starting point
                 self.text_y += int(self.height - total_text_height)/2
+
+        self.font_size = current_font_size_
 
 
     def render(self):
