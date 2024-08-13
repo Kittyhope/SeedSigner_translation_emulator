@@ -352,7 +352,7 @@ class TextArea(BaseComponent):
                 if not self.height_ignores_below_baseline and re.findall(f"[gjpqy]", self.text_lines[-1]["text"]):
                     # Last line has at least one char that dips below baseline
                     total_text_height += self.text_height_below_baseline
-            if self.height is None or total_text_height <= self.height:
+            if self.height is None or total_text_height <= self.height or self.allow_text_overflow:
                 break
             else:
                 current_font_size_ -= 1
@@ -1435,6 +1435,14 @@ def reflow_text_with_spaces(text: str, width: int, font_name, font_size, allow_t
                 # Candidate line is still too long. Restrict search range down.
                 if min_index + 1 == index:
                     if index == 1:
+                        if components_current_selected_language == "DE" and len(words[0]) >= 15:
+                            split_point = 1
+                            while split_point < len(words[0]):
+                                (left, top, right, bottom) = font.getbbox(words[0][:split_point], anchor="ls")
+                                if right - left >= width:
+                                    break
+                                split_point += 1
+                            return (1, right - left, split_point - 1)
                         # It's just one long, unbreakable word. There's no good
                         # solution here. Just accept it as is and let it render off
                         # the edges.
@@ -1451,7 +1459,7 @@ def reflow_text_with_spaces(text: str, width: int, font_name, font_size, allow_t
                 # Candidate line is possibly shorter than necessary.
                 return _binary_len_search(min_index=index, max_index=max_index)
 
-        if len(text.split()) == 1 and not allow_text_overflow:
+        if len(text.split()) == 1 and not allow_text_overflow and components_current_selected_language != "DE":
             # No whitespace chars to split on!
             raise TextDoesNotFitException("Text cannot fit in target rect with this font+size")
 
@@ -1463,9 +1471,15 @@ def reflow_text_with_spaces(text: str, width: int, font_name, font_size, allow_t
                 _add_text_line("", 0)
             else:
                 while words:
-                    (index, tw) = _binary_len_search(0, len(words))
-                    _add_text_line(" ".join(words[0:index]), tw)
-                    words = words[index:]
+                    result_ = _binary_len_search(0, len(words))
+                    if len(result_) == 2:
+                        index, tw = result_
+                        _add_text_line(" ".join(words[0:index]), tw)
+                        words = words[index:]
+                    else:
+                        index, tw, split_point = result_
+                        _add_text_line(words[0][:split_point], tw)
+                        words[0] = words[0][split_point:]
 
     return text_lines
 

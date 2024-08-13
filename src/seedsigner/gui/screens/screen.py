@@ -372,7 +372,7 @@ class ButtonListScreen(BaseTopNavScreen):
         font_size_sub = self.button_font_size
         file_path_ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'resources', 'fonts',f'{GUIConstants.BUTTON_FONT_NAME}.ttf'))
         font_sub = ImageFont.truetype(file_path_, font_size_sub)
-        while font_sub.getlength(text) > max_width and font_size_sub > GUIConstants.BODY_FONT_MIN_SIZE:
+        while font_sub.getlength(text) > max_width and font_size_sub > GUIConstants.BODY_FONT_MIN_SIZE-3:
             font_size_sub -= 1
             font_sub = ImageFont.truetype(file_path_, font_size_sub)
 

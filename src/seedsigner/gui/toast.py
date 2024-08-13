@@ -28,25 +28,29 @@ class ToastOverlay(BaseComponent):
             icon_color=self.color
         )
         self.icon.screen_y = self.canvas_height - self.height + int((self.height - self.icon.height)/2)
+        while self.font_size > 10:
+            self.label = TextArea(
+                image_draw=self.image_draw,
+                canvas=self.canvas,
+                text=self.label_text,
+                font_size=self.font_size,
+                font_color=self.color,
+                font_name= GUIConstants.BODY_FONT_NAME,
+                edge_padding=0,
+                is_text_centered=False,
+                auto_line_break=True,
+                width=self.canvas_width - self.icon.screen_x - self.icon.width - GUIConstants.COMPONENT_PADDING - self.outline_thickness,
+                screen_x=self.icon.screen_x + self.icon.width + GUIConstants.COMPONENT_PADDING,
+                allow_text_overflow=False,
+            )
 
-        self.label = TextArea(
-            image_draw=self.image_draw,
-            canvas=self.canvas,
-            text=self.label_text,
-            font_size=self.font_size,
-            font_color=self.color,
-            font_name= GUIConstants.BODY_FONT_NAME,
-            edge_padding=0,
-            is_text_centered=False,
-            auto_line_break=True,
-            width=self.canvas_width - self.icon.screen_x - self.icon.width - GUIConstants.COMPONENT_PADDING - self.outline_thickness,
-            screen_x=self.icon.screen_x + self.icon.width + GUIConstants.COMPONENT_PADDING,
-            allow_text_overflow=False,
-        )
+            if self.label.height <= self.height:
+                break
+            self.font_size -= 1
 
         # Vertically center the message within the toast (for single- or multi-line
         # messages).
-        self.label.screen_y = self.canvas_height - self.height + self.outline_thickness + int((self.height - 2*self.outline_thickness - self.label.height)/2)
+        self.label.screen_y = self.canvas_height - self.height + int((self.height - self.label.height) / 2)
 
 
     def render(self):
