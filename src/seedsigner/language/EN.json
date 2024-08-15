@@ -55,7 +55,7 @@
     "QRCode not recognized or not yet supported.": "QR code not recognized or not yet supported.",
     "Error": "Error",
     "Wrong QR Type": "Wrong QR Type",
-    "received \"{qr_type_}\" format": "received \"{qr_type_}\" format",
+    "received \"{qr_type_}\" format": ", received \"{qr_type_}\" format",
     "Back": "Back",
     "Not yet implemented!": "Not yet implemented!",
     "Scan PSBT": "Scan PSBT",

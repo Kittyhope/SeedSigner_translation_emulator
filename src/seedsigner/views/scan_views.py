@@ -63,7 +63,7 @@ class ScanView(View):
                 return Destination(ErrorView, view_args=dict(
                     title=translator("Error"),
                     status_headline=translator("Wrong QR Type"),
-                    text=self.invalid_qr_type_message + f""", {translator("received \"{qr_type_}\" format",qr_type_=self.decoder.qr_type.replace("__", ": ").replace("_", " "))}""",
+                    text=self.invalid_qr_type_message + translator(", received \"{qr_type_}\" format",qr_type_=self.decoder.qr_type.replace("__", ": ").replace("_", " ")),
                     button_text=translator("Back"),
                     next_destination=Destination(BackStackView, skip_current_view=True),
                 ))

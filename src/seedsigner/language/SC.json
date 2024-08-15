@@ -55,7 +55,7 @@
     "QRCode not recognized or not yet supported.": "二维码无法识别或尚不支持。",
     "Error": "错误",
     "Wrong QR Type": "错误的二维码类型",
-    "received \"{qr_type_}\" format": "收到\"{qr_type_}\"格式",
+    "received \"{qr_type_}\" format": ", 收到\"{qr_type_}\"格式",
     "Back": "返回",
     "Not yet implemented!": "功能尚未实现！",
     "Scan PSBT": "扫描PSBT",

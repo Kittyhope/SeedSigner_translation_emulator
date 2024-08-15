@@ -55,7 +55,7 @@
     "QRCode not recognized or not yet supported.": "QR未認識または未対応",
     "Error": "エラー",
     "Wrong QR Type": "QRタイプ不一致",
-    "received \"{qr_type_}\" format": "\"{qr_type_}\"形式受信",
+    "received \"{qr_type_}\" format": ", \"{qr_type_}\"形式受信",
     "Back": "戻る",
     "Not yet implemented!": "未実装",
     "Scan PSBT": "PSBTスキャン",
