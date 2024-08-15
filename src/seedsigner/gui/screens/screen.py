@@ -1245,13 +1245,8 @@ class KeyboardScreen(BaseTopNavScreen):
 
                 # Render a new TextArea over the TopNav title bar
                 if self.update_title():
-                    TextArea(
-                        text=self.title,
-                        font_name=GUIConstants.TOP_NAV_TITLE_FONT_NAME,
-                        font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE,
-                        height=self.top_nav.height,
-                    ).render()
-                    self.top_nav.render_buttons()
+                    self.top_nav.update_title(self.title)
+                    self.top_nav.render()
     
             elif input in HardwareButtonsConstants.KEYS__LEFT_RIGHT_UP_DOWN:
                 # Live joystick movement; haven't locked this new letter in yet.

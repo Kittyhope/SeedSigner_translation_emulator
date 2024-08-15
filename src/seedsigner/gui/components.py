@@ -294,7 +294,7 @@ class TextArea(BaseComponent):
     auto_line_break: bool = True
     allow_text_overflow: bool = False
     height_ignores_below_baseline: bool = False  # If True, characters that render below the baseline (e.g. "pqgy") will not affect the final height calculation
-
+    back_button_width_x: int = 0
 
     def __post_init__(self):
         super().__post_init__()
@@ -317,7 +317,7 @@ class TextArea(BaseComponent):
             # Do initial calcs without worrying about supersampling.
             self.text_lines = reflow_text_for_width(
                 text=self.text,
-                width=self.width - 2*self.edge_padding-self.min_text_x,
+                width=self.width - 2*self.edge_padding-self.back_button_width_x,
                 font_name=self.font_name,
                 font_size=current_font_size_,
                 allow_text_overflow=self.allow_text_overflow,
@@ -1252,9 +1252,11 @@ class TopNav(BaseComponent):
             )
 
         min_text_x = 0
+        back_button_width_x = 0
         if self.show_back_button:
             # Don't let the title intrude on the BACK button
             min_text_x = self.left_button.screen_x + self.left_button.width + GUIConstants.COMPONENT_PADDING
+            back_button_width_x = self.left_button.width + GUIConstants.COMPONENT_PADDING
 
         if self.icon_name:
             self.title = IconTextLine(
@@ -1281,6 +1283,7 @@ class TopNav(BaseComponent):
                 font_name=self.font_name,
                 font_size=self.font_size,
                 height_ignores_below_baseline=True,  # Consistently vertically center text, ignoring chars that render below baseline (e.g. "pqyj")
+                back_button_width_x=back_button_width_x
             )
 
 
@@ -1308,6 +1311,23 @@ class TopNav(BaseComponent):
             self.right_button.is_selected = self.is_selected
             self.right_button.render()
 
+    def update_title(self, new_title: str):
+        self.text = new_title
+        min_text_x = self.left_button.screen_x + self.left_button.width + GUIConstants.COMPONENT_PADDING
+        back_button_width_x = self.left_button.width + GUIConstants.COMPONENT_PADDING
+        self.title = TextArea(
+            screen_x=0,
+            screen_y=0,
+            min_text_x=min_text_x,
+            width=self.width,
+            height=self.height,
+            text=new_title,
+            is_text_centered=True,
+            font_name=self.font_name,
+            font_size=self.font_size,
+            height_ignores_below_baseline=True,
+            back_button_width_x=back_button_width_x
+        )
 
 
 def linear_interp(a, b, t):
