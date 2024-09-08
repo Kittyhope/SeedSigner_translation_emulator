@@ -3,36 +3,41 @@ import hashlib
 import logging
 import os
 import time
+import subprocess
+import nacl.utils
 
 from embit.descriptor import Descriptor
 from PIL import Image
 from PIL.ImageOps import autocontrast
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 
 from seedsigner.controller import Controller
 from seedsigner.gui.components import FontAwesomeIconConstants, GUIConstants, SeedSignerIconConstants
 from seedsigner.gui.screens import (RET_CODE__BACK_BUTTON, ButtonListScreen, WarningScreen)
+from seedsigner.gui.screens.seed_screens import SeedTurtleMovementNumberScreen, SeedDoorNumberScreen
 from seedsigner.gui.screens.tools_screens import (ToolsCalcFinalWordDoneScreen, ToolsCalcFinalWordFinalizePromptScreen,
     ToolsCalcFinalWordScreen, ToolsCoinFlipEntryScreen, ToolsDiceEntropyEntryScreen, ToolsImageEntropyFinalImageScreen,
-    ToolsImageEntropyLivePreviewScreen, ToolsAddressExplorerAddressTypeScreen)
+    ToolsImageEntropyLivePreviewScreen, ToolsAddressExplorerAddressTypeScreen,ToolsCustomDoorEntropyScreen, TurtleSeedGenerationScreen)
 from seedsigner.helpers import embit_utils, mnemonic_generation
 from seedsigner.models.encode_qr import GenericStaticQrEncoder
 from seedsigner.models.seed import Seed
 from seedsigner.models.settings_definition import SettingsConstants
-from seedsigner.views.seed_views import SeedDiscardView, SeedFinalizeView, SeedMnemonicEntryView, SeedOptionsView, SeedWordsWarningView, SeedExportXpubScriptTypeView
+from seedsigner.views.seed_views import SeedDiscardView, SeedFinalizeView, SeedMnemonicEntryView, SeedOptionsView, SeedWordsWarningView, SeedExportXpubScriptTypeView, SeedAddIDView, SeedAddPASSWORDView
 from seedsigner.views.language_views import translator
+from seedsigner.views.settings_views import CustomSettingsMenuView
 from .view import View, Destination, BackStackView
 
 logger = logging.getLogger(__name__)
 
 class ToolsMenuView(View):
-    IMAGE = (translator(" New seed"), FontAwesomeIconConstants.CAMERA)
-    DICE = (translator("New seed"), FontAwesomeIconConstants.DICE)
+    GENERATE_SEED = (translator("Generate New Seed"), SeedSignerIconConstants.PLUS)
     KEYBOARD = (translator("Calc 12th/24th word"), FontAwesomeIconConstants.KEYBOARD)
     ADDRESS_EXPLORER = translator("Address Explorer")
     VERIFY_ADDRESS = translator("Verify address")
 
     def run(self):
-        button_data = [self.IMAGE, self.DICE, self.KEYBOARD, self.ADDRESS_EXPLORER, self.VERIFY_ADDRESS]
+        button_data = [self.GENERATE_SEED, self.KEYBOARD, self.ADDRESS_EXPLORER, self.VERIFY_ADDRESS]
 
         selected_menu_num = self.run_screen(
             ButtonListScreen,
@@ -44,11 +49,9 @@ class ToolsMenuView(View):
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
 
-        elif button_data[selected_menu_num] == self.IMAGE:
-            return Destination(ToolsImageEntropyLivePreviewView)
-
-        elif button_data[selected_menu_num] == self.DICE:
-            return Destination(ToolsDiceEntropyMnemonicLengthView)
+        elif button_data[selected_menu_num] == self.GENERATE_SEED:
+            from seedsigner.views.generate_seed_views import GenerateSeedMenuView
+            return Destination(GenerateSeedMenuView)
 
         elif button_data[selected_menu_num] == self.KEYBOARD:
             return Destination(ToolsCalcFinalWordNumWordsView)
@@ -715,3 +718,212 @@ class ToolsAddressExplorerAddressView(View):
     
         # Exiting/Cancelling the QR display screen always returns to the list
         return Destination(ToolsAddressExplorerAddressListView, view_args=dict(is_change=self.is_change, start_index=self.start_index, selected_button_index=self.index - self.start_index, initial_scroll=self.parent_initial_scroll), skip_current_view=True)
+
+def get_openssl_random(n):
+    try:
+        return subprocess.check_output(["openssl", "rand", str(n)], stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        raise RuntimeError("OpenSSL random generation failed")
+
+def get_dev_random(n):
+    try:
+        with open("/dev/random", "rb") as f:
+            return f.read(n)
+    except IOError:
+        raise RuntimeError("Failed to read from /dev/random")
+
+def get_libsodium_random(n):
+    return nacl.utils.random(n)
+
+def sha3_256_hash(data):
+    return hashlib.sha3_256(data).digest()
+
+def xor_bytes(a, b):
+    return bytes(x ^ y for x, y in zip(a, b))
+
+def mix_entropy(*entropy_sources):
+    key = os.urandom(32)
+    nonce = os.urandom(16)
+    cipher = Cipher(algorithms.AES(key), modes.CTR(nonce), backend=default_backend())
+    encryptor = cipher.encryptor()
+    
+    mixed = b''
+    for source in entropy_sources:
+        mixed += encryptor.update(source)
+    
+    return mixed
+
+def extract_bits(hash_value, num_bits):
+    if num_bits > 256:
+        raise ValueError("요청된 비트 수가 해시의 길이를 초과합니다.")
+    
+    bit_string = ''.join(format(byte, '08b') for byte in hash_value)
+    return bit_string[:num_bits]
+
+def generate_random_entropy(num_bits):
+    ENTROPY_SIZE = 48
+
+    openssl_bytes = get_openssl_random(ENTROPY_SIZE)
+    dev_random_bytes = get_dev_random(ENTROPY_SIZE)
+    libsodium_bytes = get_libsodium_random(ENTROPY_SIZE)
+
+    openssl_hash = sha3_256_hash(openssl_bytes)
+    dev_random_hash = sha3_256_hash(dev_random_bytes)
+    libsodium_hash = sha3_256_hash(libsodium_bytes)
+
+    xor_result = xor_bytes(xor_bytes(openssl_hash, dev_random_hash), libsodium_hash)
+
+    mixed_entropy = mix_entropy(openssl_bytes, dev_random_bytes, libsodium_bytes)
+
+    final_hash = sha3_256_hash(xor_result + mixed_entropy)
+
+    return final_hash[:num_bits // 8 + (1 if num_bits % 8 else 0)]
+
+class ToolsRandomEntropyMnemonicLengthView(View):
+    def run(self):
+        TWELVE_WORDS = translator("12 words")
+        TWENTY_FOUR_WORDS = translator("24 words")
+        button_data = [TWELVE_WORDS, TWENTY_FOUR_WORDS]
+
+        selected_menu_num = self.run_screen(
+            ButtonListScreen,
+            title=translator("Mnemonic Length"),
+            button_data=button_data,
+        )
+
+        if selected_menu_num == RET_CODE__BACK_BUTTON:
+            return Destination(BackStackView)
+        
+        if button_data[selected_menu_num] == TWELVE_WORDS:
+            num_bits = 128
+        else:
+            num_bits = 256
+
+        entropy = generate_random_entropy(num_bits)
+        mnemonic = mnemonic_generation.generate_mnemonic_from_bytes(entropy)
+
+        seed = Seed(mnemonic, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__WORDLIST_LANGUAGE))
+        self.controller.storage.set_pending_seed(seed)
+        
+        from seedsigner.views.seed_views import SeedWordsWarningView
+        return Destination(SeedWordsWarningView, view_args={"seed_num": None}, clear_history=True)
+    
+class ToolsCustomEntropyMnemonicLengthView(View):
+    def run(self):
+        TWELVE_WORDS = translator("12 words")
+        TWENTY_FOUR_WORDS = translator("24 words")
+        button_data = [TWELVE_WORDS, TWENTY_FOUR_WORDS]
+
+        selected_menu_num = self.run_screen(
+            ButtonListScreen,
+            title=translator("Mnemonic Length"),
+            button_data=button_data,
+        )
+
+        if selected_menu_num == RET_CODE__BACK_BUTTON:
+            return Destination(BackStackView)
+        
+        if button_data[selected_menu_num] == TWELVE_WORDS:
+            num_bits = 128
+        else:
+            num_bits = 256
+
+        return Destination(ToolsCustomEntropyOptionsView, view_args=dict(num_bits=num_bits))
+
+class ToolsCustomEntropyOptionsView(View):
+    def __init__(self, num_bits: int):
+        super().__init__()
+        self.num_bits = num_bits
+
+    def run(self):
+        ID = (translator("ID"), SeedSignerIconConstants.FINGERPRINT)
+        PASSWORD = (translator("Password"), SeedSignerIconConstants.PASSPHRASE)
+        DOOR = (translator("Door"), SeedSignerIconConstants.QRCODE)
+        TURTLE = (translator("Turtle"), SeedSignerIconConstants.BITCOIN)
+        SEEDSIGNER_SETTINGS = (translator("Seedsigner settings"), SeedSignerIconConstants.SETTINGS)
+        MNEMONIC = (translator("Mnemonic"), SeedSignerIconConstants.SEEDS)
+
+        button_data = [ID, PASSWORD, DOOR, TURTLE, SEEDSIGNER_SETTINGS, MNEMONIC]
+
+        selected_menu_num = self.run_screen(
+            ButtonListScreen,
+            title=translator("Custom"),
+            is_bottom_list=True,
+            is_button_text_centered=False,
+            button_data=button_data,
+        )
+
+        if selected_menu_num == RET_CODE__BACK_BUTTON:
+            return Destination(BackStackView)
+        if button_data[selected_menu_num] == ID:
+            return Destination(SeedAddIDView)
+        elif button_data[selected_menu_num] == PASSWORD:
+            return Destination(SeedAddPASSWORDView)
+        elif button_data[selected_menu_num] == DOOR:
+            return Destination(ToolsCustomDoorEntropyView)
+        elif button_data[selected_menu_num] == TURTLE:
+            return Destination(TurtleSeedGenerationView)  
+        elif button_data[selected_menu_num] == SEEDSIGNER_SETTINGS:
+            return Destination(CustomSettingsMenuView)
+        
+class ToolsCustomDoorEntropyView(View):
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        ret = self.run_screen(
+            SeedDoorNumberScreen,
+        )
+
+        if ret == RET_CODE__BACK_BUTTON:
+            return Destination(BackStackView)
+
+        try:
+            num_doors = int(ret)
+        except ValueError:
+            # Handle invalid input
+            return Destination(WarningScreen, view_args={"text": translator("Invalid number of doors")})
+
+        selected_doors = []
+        for i in range(num_doors):
+            door_screen = ToolsCustomDoorEntropyScreen(
+                title=translator("Select Door {}/{}").format(i+1, num_doors)
+            )
+            selected_door = door_screen.display()
+
+            if selected_door == RET_CODE__BACK_BUTTON:
+                return Destination(BackStackView)
+
+            selected_doors.append(selected_door)
+        return Destination(BackStackView)
+    
+class TurtleSeedGenerationView(View):
+    def run(self):
+        # First, run SeedTurtleMovementNumberScreen to get the number of moves
+        ret = self.run_screen(
+            SeedTurtleMovementNumberScreen,
+        )
+
+        if ret == RET_CODE__BACK_BUTTON:
+            return Destination(BackStackView)
+
+        try:
+            num_moves = int(ret)
+        except ValueError:
+            # Handle invalid input
+            return Destination(WarningScreen, view_args={"text": translator("Invalid number of moves")})
+
+        # Now run TurtleSeedGenerationScreen with the specified number of moves
+        turtle_screen = TurtleSeedGenerationScreen(num_moves=num_moves)
+        moves = turtle_screen.display()
+
+        # Convert moves to a string and use it as entropy
+        entropy = ''.join(moves)
+        
+        # Generate seed from entropy
+        #seed = Seed.from_entropy(entropy)
+
+        # Store the generated seed
+        #self.controller.storage.set_pending_seed(seed)
+
+        return Destination(BackStackView)

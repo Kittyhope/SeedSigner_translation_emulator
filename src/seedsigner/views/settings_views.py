@@ -91,7 +91,76 @@ class SettingsMenuView(View):
         else:
             return Destination(SettingsEntryUpdateSelectionView, view_args=dict(attr_name=settings_entries[selected_menu_num].attr_name, parent_initial_scroll=initial_scroll))
 
+class CustomSettings:
+    def __init__(self):
+        self._settings = {}
 
+    def get_value(self, attr_name):
+        return self._settings.get(attr_name)
+
+    def set_value(self, attr_name, value):
+        self._settings[attr_name] = value
+
+class CustomSettingsMenuView(View):
+    def __init__(self, visibility: str = SettingsConstants.VISIBILITY__GENERAL, selected_attr: str = None, initial_scroll: int = 0, custom_settings: CustomSettings = None):
+        super().__init__()
+        self.visibility = visibility
+        self.selected_attr = selected_attr
+        self.initial_scroll = initial_scroll
+        self.custom_settings = custom_settings or CustomSettings()
+
+    def run(self):
+        settings_entries = SettingsDefinition.get_settings_entries(
+            visibility=self.visibility
+        )
+        button_data=[e.display_name for e in settings_entries]
+
+        selected_button = 0
+        if self.selected_attr:
+            for i, entry in enumerate(settings_entries):
+                if entry.attr_name == self.selected_attr:
+                    selected_button = i
+                    break
+
+        if self.visibility == SettingsConstants.VISIBILITY__GENERAL:
+            title = translator("Settings")
+            button_data.append((translator("Advanced"), None, None, None, SeedSignerIconConstants.CHEVRON_RIGHT))
+            next_destination = Destination(CustomSettingsMenuView, view_args={"visibility": SettingsConstants.VISIBILITY__ADVANCED, "custom_settings": self.custom_settings})
+        elif self.visibility == SettingsConstants.VISIBILITY__ADVANCED:
+            title = translator("Advanced")
+            next_destination = None
+        elif self.visibility == SettingsConstants.VISIBILITY__DEVELOPER:
+            title = translator("Dev Options")
+            next_destination = None
+
+        selected_menu_num = self.run_screen(
+            ButtonListScreen,
+            title=title,
+            is_button_text_centered=False,
+            button_data=button_data,
+            selected_button=selected_button,
+            scroll_y_initial_offset=self.initial_scroll,
+        )
+
+        initial_scroll = self.screen.buttons[0].scroll_y
+
+        if selected_menu_num == RET_CODE__BACK_BUTTON:
+            if self.visibility == SettingsConstants.VISIBILITY__GENERAL:
+                return Destination(MainMenuView)
+            elif self.visibility == SettingsConstants.VISIBILITY__ADVANCED:
+                return Destination(CustomSettingsMenuView, view_args={"custom_settings": self.custom_settings})
+            else:
+                return Destination(CustomSettingsMenuView, view_args={"visibility": SettingsConstants.VISIBILITY__ADVANCED, "custom_settings": self.custom_settings})
+        
+        elif selected_menu_num == len(settings_entries):
+            return next_destination
+
+        else:
+            return Destination(CustomSettingsEntryUpdateSelectionView, view_args=dict(
+                attr_name=settings_entries[selected_menu_num].attr_name,
+                parent_initial_scroll=initial_scroll,
+                custom_settings=self.custom_settings
+            ))
 
 class SettingsEntryUpdateSelectionView(View):
     """
@@ -187,7 +256,94 @@ class SettingsEntryUpdateSelectionView(View):
 
         return Destination(SettingsEntryUpdateSelectionView, view_args=dict(attr_name=self.settings_entry.attr_name, parent_initial_scroll=self.parent_initial_scroll, selected_button=self.selected_button), skip_current_view=True)
 
+class CustomSettingsEntryUpdateSelectionView(View):
+    def __init__(self, attr_name: str, parent_initial_scroll: int = 0, selected_button: int = None, custom_settings: CustomSettings = None):
+        super().__init__()
+        self.settings_entry = SettingsDefinition.get_settings_entry(attr_name)
+        self.selected_button = selected_button
+        self.parent_initial_scroll = parent_initial_scroll
+        self.custom_settings = custom_settings or CustomSettings()
 
+    def run(self):
+        initial_value = self.custom_settings.get_value(self.settings_entry.attr_name)
+        button_data = []
+        checked_buttons = []
+        for i, value in enumerate(self.settings_entry.selection_options):
+            if type(value) == tuple:
+                value, display_name = value
+            else:
+                display_name = value
+
+            button_data.append(display_name)
+
+            if (type(initial_value) == list and value in initial_value) or value == initial_value:
+                checked_buttons.append(i)
+
+                if self.selected_button is None:
+                    self.selected_button = i
+        
+        if self.selected_button is None:
+            self.selected_button = 0
+            
+        ret_value = self.run_screen(
+            settings_screens.CustomSettingsEntryUpdateSelectionScreen,
+            display_name=self.settings_entry.display_name,
+            help_text=self.settings_entry.help_text,
+            button_data=button_data,
+            selected_button=self.selected_button,
+            checked_buttons=checked_buttons,
+            settings_entry_type=self.settings_entry.type,
+        )
+
+        destination = None
+        settings_menu_view_destination = Destination(
+            CustomSettingsMenuView,
+            view_args={
+                "visibility": self.settings_entry.visibility,
+                "selected_attr": self.settings_entry.attr_name,
+                "initial_scroll": self.parent_initial_scroll,
+                "custom_settings": self.custom_settings
+            }
+        )
+
+        if ret_value == RET_CODE__BACK_BUTTON:
+            return settings_menu_view_destination
+
+        value = self.settings_entry.get_selection_option_value(ret_value)
+
+        if self.settings_entry.type == SettingsConstants.TYPE__FREE_ENTRY:
+            updated_value = ret_value
+            destination = settings_menu_view_destination
+
+        elif self.settings_entry.type == SettingsConstants.TYPE__MULTISELECT:
+            updated_value = list(initial_value) if initial_value else []
+            if value not in updated_value:
+                updated_value.append(value)
+            else:
+                updated_value.remove(value)
+
+        else:
+            if value == initial_value:
+                return settings_menu_view_destination
+            else:
+                updated_value = value
+
+        self.custom_settings.set_value(
+            attr_name=self.settings_entry.attr_name,
+            value=updated_value
+        )
+
+        if destination:
+            return destination
+
+        self.selected_button = ret_value
+
+        return Destination(CustomSettingsEntryUpdateSelectionView, view_args=dict(
+            attr_name=self.settings_entry.attr_name,
+            parent_initial_scroll=self.parent_initial_scroll,
+            selected_button=self.selected_button,
+            custom_settings=self.custom_settings
+        ), skip_current_view=True)
 
 class SettingsIngestSettingsQRView(View):
     def __init__(self, data: str):

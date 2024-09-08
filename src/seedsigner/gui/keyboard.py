@@ -33,6 +33,12 @@ class Keyboard:
         "font": COMPACT_KEY_FONT,
         "size": 2,
     }
+    KEY_BACKSPACE_2 = {
+        "code": "DEL",
+        "letter": "del",
+        "font": COMPACT_KEY_FONT,
+        "size": 5,
+    }
     KEY_SPACE = {
         "code": "SPACE",
         "letter": "space",
@@ -75,6 +81,18 @@ class Keyboard:
         "font": REGULAR_KEY_FONT,
         "size": 1,
     }
+    KEY_CURSOR_LEFT_2 = {
+        "code": "CURSOR_LEFT",
+        "letter": "<",
+        "font": REGULAR_KEY_FONT,
+        "size": 2,
+    }
+    KEY_CURSOR_RIGHT_2 = {
+        "code": "CURSOR_RIGHT",
+        "letter": ">",
+        "font": REGULAR_KEY_FONT,
+        "size": 2,
+    }
     KEY_PREVIOUS_PAGE = {
         "code": "PREV",
         "letter": "<",
@@ -87,6 +105,9 @@ class Keyboard:
         KEY_CURSOR_LEFT["code"]: KEY_CURSOR_LEFT,
         KEY_CURSOR_RIGHT["code"]: KEY_CURSOR_RIGHT,
         KEY_PREVIOUS_PAGE["code"]: KEY_PREVIOUS_PAGE,
+        KEY_BACKSPACE_2["code"]: KEY_BACKSPACE_2,
+        KEY_CURSOR_LEFT_2["code"]: KEY_CURSOR_LEFT_2,
+        KEY_CURSOR_RIGHT_2["code"]: KEY_CURSOR_RIGHT_2,        
     }
 
     @dataclass

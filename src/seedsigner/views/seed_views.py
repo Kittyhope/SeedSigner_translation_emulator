@@ -330,7 +330,41 @@ class SeedFinalizeView(View):
         elif button_data[selected_menu_num] == passphrase_button:
             return Destination(SeedAddPassphraseView)
 
+class SeedAddIDView(View):
+    def __init__(self):
+        super().__init__()
+        self.USER_ID = ""
 
+    def run(self):
+        id_title = translator("Enter ID")
+        ret_dict = self.run_screen(
+            seed_screens.SeedAddIDPASSWORDScreen,
+            title=id_title
+        )
+
+        if "is_back_button" in ret_dict:
+            return Destination(BackStackView)
+        elif "user_id_password" in ret_dict:
+            self.USER_ID = ret_dict["user_id_password"]
+            return Destination(BackStackView)
+        
+class SeedAddPASSWORDView(View):
+    def __init__(self):
+        super().__init__()
+        self.USER_PASSWORD = ""
+
+    def run(self):
+        password_title = translator("Enter Password")
+        ret_dict = self.run_screen(
+            seed_screens.SeedAddIDPASSWORDScreen,
+            title=password_title
+        )
+
+        if "is_back_button" in ret_dict:
+            return Destination(BackStackView)
+        elif "user_id_password" in ret_dict:
+            self.USER_PASSWORD = ret_dict["user_id_password"]
+            return Destination(BackStackView)
 
 class SeedAddPassphraseView(View):
     def __init__(self):

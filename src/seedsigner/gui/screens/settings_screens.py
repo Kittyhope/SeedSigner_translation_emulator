@@ -49,7 +49,8 @@ class SettingsEntryUpdateSelectionScreen(ButtonListScreen):
                 screen_y=prev_component_bottom + GUIConstants.COMPONENT_PADDING,
             ))
 
-
+class CustomSettingsEntryUpdateSelectionScreen(SettingsEntryUpdateSelectionScreen):
+    pass
 
 @dataclass
 class IOTestScreen(BaseTopNavScreen):

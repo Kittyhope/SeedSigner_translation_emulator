@@ -2,11 +2,11 @@ import time
 
 from dataclasses import dataclass
 from typing import Any
-from PIL.Image import Image
+from PIL import Image, ImageDraw
 from seedsigner.hardware.camera import Camera
 from seedsigner.gui.components import FontAwesomeIconConstants, Fonts, GUIConstants, IconTextLine, SeedSignerIconConstants, TextArea
 
-from seedsigner.gui.screens.screen import RET_CODE__BACK_BUTTON, BaseScreen, ButtonListScreen, KeyboardScreen
+from seedsigner.gui.screens.screen import RET_CODE__BACK_BUTTON, BaseScreen, ButtonListScreen, KeyboardScreen, BaseTopNavScreen
 from seedsigner.hardware.buttons import HardwareButtonsConstants
 from seedsigner.models.settings_definition import SettingsConstants, SettingsDefinition
 from seedsigner.views.language_views import translator
@@ -440,3 +440,267 @@ class ToolsAddressExplorerAddressTypeScreen(ButtonListScreen):
                 screen_x=GUIConstants.EDGE_PADDING,
                 screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING,
             ))
+
+class DoorGrid:
+    def __init__(self, canvas, image_draw, width, height, renderer):
+        self.canvas = canvas
+        self.image_draw = image_draw
+        self.width = width
+        self.height = height
+        self.renderer = renderer
+        self.grid_size = 16
+        self.door_size = min(width, height) // self.grid_size
+        self.grid_start_x = (width - (self.door_size * self.grid_size)) // 2
+        self.grid_start_y = (height - (self.door_size * self.grid_size)) // 2 + 43
+        self.selected_x = 0
+        self.selected_y = 0
+
+    def render(self):
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                door_x =  self.grid_start_x + x * self.door_size
+                door_y =  self.grid_start_y + y * self.door_size
+                color = "#353535"
+                if x == self.selected_x and y == self.selected_y:
+                    color = GUIConstants.ACCENT_COLOR
+                self.image_draw.rectangle(
+                    [door_x, door_y, door_x + self.door_size, door_y + self.door_size],
+                    outline=color,
+                    width=2
+                )
+
+    def move_selection(self, dx, dy):
+        self.selected_x = (self.selected_x + dx) % self.grid_size
+        self.selected_y = (self.selected_y + dy) % self.grid_size
+
+    def get_selected_door(self):
+        return self.selected_y * self.grid_size + self.selected_x
+
+    def animate_door_open(self):
+        door_x = self.grid_start_x + self.selected_x * self.door_size
+        door_y = self.grid_start_y + self.selected_y * self.door_size
+        
+        # Create a new image for the door
+        door_image = Image.new('RGBA', (self.door_size, self.door_size), (0, 0, 0, 0))
+        door_draw = ImageDraw.Draw(door_image)
+
+        # Draw the initial closed door
+        door_draw.rectangle([0, 0, self.door_size, self.door_size], 
+                            fill=GUIConstants.BUTTON_BACKGROUND_COLOR,
+                            outline=GUIConstants.ACCENT_COLOR,
+                            width=2)
+
+        # Animate the door opening
+        for i in range(self.door_size):
+            # Clear the door image
+            door_draw.rectangle([0, 0, self.door_size, self.door_size], fill=(0, 0, 0, 0))
+            
+            # Draw the opening door
+            door_draw.rectangle([i, 0, self.door_size, self.door_size], 
+                                fill=GUIConstants.BUTTON_BACKGROUND_COLOR,
+                                outline=GUIConstants.ACCENT_COLOR,
+                                width=2)
+            
+            # Paste the door image onto the main canvas
+            self.canvas.paste(door_image, (door_x, door_y), door_image)
+            
+            # Update the display using the renderer
+            self.renderer.show_image(self.canvas)
+            time.sleep(0.05)
+
+        self.renderer.show_image(self.canvas)
+
+class ToolsCustomDoorEntropyScreen(BaseTopNavScreen):
+    def __init__(self, title):
+        super().__init__(title=title, show_back_button=False)
+        self.door_grid = DoorGrid(
+            canvas=self.canvas,
+            image_draw=self.image_draw,
+            width=self.canvas_width,
+            height=self.canvas_height - self.top_nav.height,
+            renderer=self.renderer
+        )
+
+    def _render(self):
+        super()._render()  # This will render the title and back button
+        self.door_grid.render()
+
+    def _run(self):
+        while True:
+            input_event = self.hw_inputs.wait_for(HardwareButtonsConstants.ALL_KEYS)
+            
+            if input_event == HardwareButtonsConstants.KEY_PRESS:
+                selected_door = self.door_grid.get_selected_door()
+                self.door_grid.animate_door_open()
+                time.sleep(0.35)
+                return selected_door
+            elif input_event == HardwareButtonsConstants.KEY_RIGHT:
+                self.door_grid.move_selection(1, 0)
+            elif input_event == HardwareButtonsConstants.KEY_LEFT:
+                self.door_grid.move_selection(-1, 0)
+            elif input_event == HardwareButtonsConstants.KEY_UP:
+                self.door_grid.move_selection(0, -1)
+            elif input_event == HardwareButtonsConstants.KEY_DOWN:
+                self.door_grid.move_selection(0, 1)
+
+            self._render()
+            self.renderer.show_image()
+
+class TurtleSeedGenerationScreen(BaseScreen):
+    def __init__(self, num_moves):
+        super().__init__()
+        self.title = "Turtle Seed Generation"
+        self.grid_size = 11
+        self.turtle_x = 5
+        self.turtle_y = 5
+        self.grid = [[' ' for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        self.moves = []
+        self.num_moves = num_moves
+        self.cell_size = 18
+        self.grid_start_x = (self.canvas_width - (self.cell_size * self.grid_size)) // 2
+        self.grid_start_y = 0
+
+    def draw_turtle(self, cell_x, cell_y):
+        # Calculate the center of the cell
+        center_x = cell_x + self.cell_size // 2
+        center_y = cell_y + self.cell_size // 2
+
+        # Define colors for turtle parts
+        turtle_body_color = "#228B22"  # Turtle green color
+        turtle_shell_color = "#006400"  # Darker green for shell
+
+        # Reduce overall size slightly by decreasing the radius factors
+        body_radius = (self.cell_size // 3) - 1  # Slightly smaller body
+        head_radius = body_radius // 2 + 1 # Slightly smaller head
+        leg_radius = body_radius // 2  # Slightly smaller legs
+        tail_length = body_radius  # Slightly smaller tail
+
+        # Turtle body (a large circle in the center)
+        self.image_draw.ellipse(
+            [center_x - body_radius, center_y - body_radius, center_x + body_radius, center_y + body_radius],
+            fill=turtle_shell_color,
+            outline="black"
+        )
+
+        # Turtle head (a smaller circle on top of the body)
+        head_x = center_x
+        head_y = center_y - body_radius - head_radius
+        self.image_draw.ellipse(
+            [head_x - head_radius, head_y - head_radius + 1, head_x + head_radius, head_y + head_radius + 1],
+            fill=turtle_body_color,
+            outline="black"
+        )
+
+        # Turtle legs (smaller circles at four corners)
+        # Top-left leg
+        self.image_draw.ellipse(
+            [center_x - body_radius - leg_radius, center_y - body_radius - leg_radius, 
+            center_x - body_radius + leg_radius, center_y - body_radius + leg_radius],
+            fill=turtle_body_color,
+            outline="black"
+        )
+        # Top-right leg
+        self.image_draw.ellipse(
+            [center_x + body_radius - leg_radius, center_y - body_radius - leg_radius, 
+            center_x + body_radius + leg_radius, center_y - body_radius + leg_radius],
+            fill=turtle_body_color,
+            outline="black"
+        )
+        # Bottom-left leg
+        self.image_draw.ellipse(
+            [center_x - body_radius - leg_radius, center_y + body_radius - leg_radius, 
+            center_x - body_radius + leg_radius, center_y + body_radius + leg_radius],
+            fill=turtle_body_color,
+            outline="black"
+        )
+        # Bottom-right leg
+        self.image_draw.ellipse(
+            [center_x + body_radius - leg_radius, center_y + body_radius - leg_radius, 
+            center_x + body_radius + leg_radius, center_y + body_radius + leg_radius],
+            fill=turtle_body_color,
+            outline="black"
+        )
+
+        # Turtle tail (a small triangle at the bottom of the body)
+        tail_x = center_x
+        tail_y = center_y + body_radius
+        self.image_draw.polygon(
+            [(tail_x- (tail_length-2), tail_y), (tail_x + (tail_length-2), tail_y), (tail_x, tail_y + tail_length+1)],
+            fill=turtle_body_color,
+            outline="black"
+        )
+
+    def _render(self):
+        super()._render()  # This will render the title
+        
+        # Render grid
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                char = self.grid[y][x] if self.grid[y][x] != ' ' else ''
+                cell_x = self.grid_start_x + x * self.cell_size
+                cell_y = self.grid_start_y + y * self.cell_size
+                
+                # Draw cell border
+                self.image_draw.rectangle(
+                    [cell_x, cell_y, cell_x + self.cell_size, cell_y + self.cell_size],
+                    outline="#B3B3B3"
+                )
+                
+                if x == self.turtle_x and y == self.turtle_y:
+                    # Draw the turtle using shapes instead of emoji
+                    self.draw_turtle(cell_x, cell_y)
+                else:
+                    # Draw other characters
+                    self.image_draw.text(
+                        (cell_x + self.cell_size // 2, cell_y + self.cell_size // 2),
+                        char,
+                        fill=GUIConstants.BODY_FONT_COLOR,
+                        font=Fonts.get_font(GUIConstants.BODY_FONT_NAME, self.cell_size - 4),
+                        anchor="mm"
+                    )
+
+        # Render instructions
+        instructions = "Up, Down, Left, Right | Press: P | Key 1/2/3: Number"
+        TextArea(
+            image_draw=self.image_draw,
+            text=instructions,
+            screen_y=self.canvas_height - 37,
+            font_size=GUIConstants.BODY_FONT_SIZE - 2
+        ).render()
+
+    def _run(self):
+        while len(self.moves) < self.num_moves:
+            self._render()
+            self.renderer.show_image()
+
+            input_event = self.hw_inputs.wait_for(HardwareButtonsConstants.ALL_KEYS)
+            
+            if input_event == HardwareButtonsConstants.KEY_UP:
+                self.turtle_y = max(0, self.turtle_y - 1)
+                self.moves.append('up')
+            elif input_event == HardwareButtonsConstants.KEY_DOWN:
+                self.turtle_y = min(self.grid_size - 1, self.turtle_y + 1)
+                self.moves.append('down')
+            elif input_event == HardwareButtonsConstants.KEY_LEFT:
+                self.turtle_x = max(0, self.turtle_x - 1)
+                self.moves.append('left')
+            elif input_event == HardwareButtonsConstants.KEY_RIGHT:
+                self.turtle_x = min(self.grid_size - 1, self.turtle_x + 1)
+                self.moves.append('right')
+            elif input_event == HardwareButtonsConstants.KEY_PRESS:
+                self.grid[self.turtle_y][self.turtle_x] = 'P'
+                self.moves.append('press')
+            elif input_event == HardwareButtonsConstants.KEY1:
+                self.grid[self.turtle_y][self.turtle_x] = '1'
+                self.moves.append('key1')
+            elif input_event == HardwareButtonsConstants.KEY2:
+                self.grid[self.turtle_y][self.turtle_x] = '2'
+                self.moves.append('key2')
+            elif input_event == HardwareButtonsConstants.KEY3:
+                self.grid[self.turtle_y][self.turtle_x] = '3'
+                self.moves.append('key3')
+
+            if len(self.moves) >= self.num_moves:
+                break
+
+        return self.moves

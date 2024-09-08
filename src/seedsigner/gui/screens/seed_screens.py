@@ -531,8 +531,10 @@ class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
 
 @dataclass
 class SeedBIP85SelectChildIndexScreen(KeyboardScreen):
+    title: str = ""
     def __post_init__(self):
-        self.title = translator("BIP-85 Index")
+        if not self.title:
+            self.title = translator("BIP-85 Index")
         self.user_input = ""
 
         # Specify the keys in the keyboard
@@ -543,7 +545,19 @@ class SeedBIP85SelectChildIndexScreen(KeyboardScreen):
 
         super().__post_init__()
 
+@dataclass
+class SeedTurtleMovementNumberScreen(SeedBIP85SelectChildIndexScreen):
+    def __post_init__(self):
+        self.title = translator("Number of Moves")
 
+        super().__post_init__()
+
+@dataclass
+class SeedDoorNumberScreen(SeedBIP85SelectChildIndexScreen):
+    def __post_init__(self):
+        self.title = translator("Number of Doors")
+
+        super().__post_init__()
 
 @dataclass
 class SeedWordsBackupTestPromptScreen(ButtonListScreen):
@@ -1010,7 +1024,157 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
 
             self.renderer.show_image()
 
+class SeedAddIDPASSWORDScreen(SeedAddPassphraseScreen):
+    def __post_init__(self):
+        super().__post_init__()
 
+        self.keys_charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@"
+
+        keys_lower = "abcdefghijklmnopqrstuvwxyz@"
+        keys_upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!"
+        text_entry_display_y = self.top_nav.height
+        text_entry_display_height = 30
+        keyboard_start_y = text_entry_display_y + text_entry_display_height + GUIConstants.COMPONENT_PADDING
+        self.keyboard_abc = Keyboard(
+            draw=self.renderer.draw,
+            charset=keys_lower,
+            rows=4,
+            cols=9,
+            rect=(
+                GUIConstants.COMPONENT_PADDING,
+                keyboard_start_y,
+                self.canvas_width - GUIConstants.COMPONENT_PADDING - self.right_panel_buttons_width,
+                self.canvas_height - GUIConstants.EDGE_PADDING
+            ),
+            additional_keys=[
+                Keyboard.KEY_CURSOR_LEFT_2,
+                Keyboard.KEY_CURSOR_RIGHT_2,
+                Keyboard.KEY_BACKSPACE_2
+            ],
+            auto_wrap=[Keyboard.WRAP_LEFT, Keyboard.WRAP_RIGHT]
+        )
+
+        self.keyboard_ABC = Keyboard(
+            draw=self.renderer.draw,
+            charset=keys_upper,
+            rows=4,
+            cols=9,
+            rect=(
+                GUIConstants.COMPONENT_PADDING,
+                keyboard_start_y,
+                self.canvas_width - GUIConstants.COMPONENT_PADDING - self.right_panel_buttons_width,
+                self.canvas_height - GUIConstants.EDGE_PADDING
+            ),
+            additional_keys=[
+                Keyboard.KEY_CURSOR_LEFT_2,
+                Keyboard.KEY_CURSOR_RIGHT_2,
+                Keyboard.KEY_BACKSPACE_2
+            ],
+            auto_wrap=[Keyboard.WRAP_LEFT, Keyboard.WRAP_RIGHT],
+            render_now=False
+        )
+
+        # 특수문자 키보드 비활성화
+        self.keyboard_symbols_1 = None
+        self.keyboard_symbols_2 = None
+
+        # 버튼 텍스트 변경
+        self.KEYBOARD__SYMBOLS_1_BUTTON_TEXT = ""
+        self.KEYBOARD__SYMBOLS_2_BUTTON_TEXT = ""
+
+    def _run(self):
+        self.user_id_password = ""
+        cursor_position = 0
+
+        cur_keyboard = self.keyboard_abc
+        cur_button1_text = self.KEYBOARD__UPPERCASE_BUTTON_TEXT
+        cur_button2_text = self.KEYBOARD__DIGITS_BUTTON_TEXT
+
+        while True:
+            input = self.hw_inputs.wait_for(HardwareButtonsConstants.ALL_KEYS)
+            
+            if input == HardwareButtonsConstants.KEY3:
+                return dict(user_id_password=self.user_id_password)
+            
+            elif input == HardwareButtonsConstants.KEY_PRESS and self.top_nav.is_selected:
+                return dict(user_id_password=self.user_id_password, is_back_button=True)
+            
+            keyboard_swap = False
+
+            if input == HardwareButtonsConstants.KEY1:
+                self.hw_button1.is_selected = True
+                self.hw_button1.render()
+                self.renderer.show_image()
+
+                if cur_button1_text == self.KEYBOARD__LOWERCASE_BUTTON_TEXT:
+                    self.keyboard_abc.set_selected_key_indices(x=cur_keyboard.selected_key["x"], y=cur_keyboard.selected_key["y"])
+                    cur_keyboard = self.keyboard_abc
+                    cur_button1_text = self.KEYBOARD__UPPERCASE_BUTTON_TEXT
+                else:
+                    self.keyboard_ABC.set_selected_key_indices(x=cur_keyboard.selected_key["x"], y=cur_keyboard.selected_key["y"])
+                    cur_keyboard = self.keyboard_ABC
+                    cur_button1_text = self.KEYBOARD__LOWERCASE_BUTTON_TEXT
+                
+                cur_keyboard.render_keys()
+                keyboard_swap = True
+                ret_val = None
+
+            elif input == HardwareButtonsConstants.KEY2:
+                self.hw_button2.is_selected = True
+                self.hw_button2.render()
+                self.renderer.show_image()
+
+                if cur_button2_text == self.KEYBOARD__DIGITS_BUTTON_TEXT:
+                    self.keyboard_digits.set_selected_key_indices(x=cur_keyboard.selected_key["x"], y=cur_keyboard.selected_key["y"])
+                    cur_keyboard = self.keyboard_digits
+                
+                cur_keyboard.render_keys()
+                keyboard_swap = True
+                ret_val = None
+
+            else:
+                # Process normal input
+                if input in [HardwareButtonsConstants.KEY_UP, HardwareButtonsConstants.KEY_DOWN] and self.top_nav.is_selected:
+                    # We're navigating off the previous button
+                    self.top_nav.is_selected = False
+                    self.top_nav.render_buttons()
+
+                    # Override the actual input w/an ENTER signal for the Keyboard
+                    if input == HardwareButtonsConstants.KEY_DOWN:
+                        input = Keyboard.ENTER_TOP
+                    else:
+                        input = Keyboard.ENTER_BOTTOM
+                elif input in [HardwareButtonsConstants.KEY_LEFT, HardwareButtonsConstants.KEY_RIGHT] and self.top_nav.is_selected:
+                    # ignore
+                    continue
+
+                ret_val = cur_keyboard.update_from_input(input)
+            # Now process the result from the keyboard
+            if ret_val in Keyboard.EXIT_DIRECTIONS:
+                self.top_nav.is_selected = True
+                self.top_nav.render_buttons()
+            
+            if ret_val in Keyboard.ADDITIONAL_KEYS and input == HardwareButtonsConstants.KEY_PRESS:
+                if ret_val == Keyboard.KEY_BACKSPACE["code"]:
+                    if cursor_position > 0:
+                        self.user_id_password = self.user_id_password[:cursor_position - 1] + self.user_id_password[cursor_position:]
+                        cursor_position -= 1
+                elif ret_val in [Keyboard.KEY_CURSOR_LEFT["code"], Keyboard.KEY_CURSOR_RIGHT["code"]]:
+                    cursor_position = max(0, min(cursor_position + (1 if ret_val == Keyboard.KEY_CURSOR_RIGHT["code"] else -1), len(self.user_id_password)))
+            elif input == HardwareButtonsConstants.KEY_PRESS and ret_val in self.keys_charset:
+                self.user_id_password = self.user_id_password[:cursor_position] + ret_val + self.user_id_password[cursor_position:]
+                cursor_position += 1
+            
+            if keyboard_swap:
+                self.hw_button1.text = cur_button1_text
+                self.hw_button2.text = cur_button2_text                
+                self.hw_button1.is_selected = False
+                self.hw_button2.is_selected = False
+                self.hw_button1.render()
+                self.hw_button2.render()
+
+            self.text_entry_display.render(self.user_id_password, cursor_position)
+            self.renderer.show_image()
 
 @dataclass
 class SeedReviewPassphraseScreen(ButtonListScreen):
