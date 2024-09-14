@@ -146,7 +146,8 @@ class CustomSettingsMenuView(View):
 
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             if self.visibility == SettingsConstants.VISIBILITY__GENERAL:
-                return Destination(MainMenuView)
+                from seedsigner.views.tools_views import ToolsCustomEntropyOptionsView
+                return Destination(ToolsCustomEntropyOptionsView)
             elif self.visibility == SettingsConstants.VISIBILITY__ADVANCED:
                 return Destination(CustomSettingsMenuView, view_args={"custom_settings": self.custom_settings})
             else:

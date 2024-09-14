@@ -460,7 +460,7 @@ class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
     def __post_init__(self):
         super().__post_init__()
 
-        words_per_page = len(self.words)
+        words_per_page = 4
 
         self.body_x = 0
         self.body_y = self.top_nav.height - int(GUIConstants.COMPONENT_PADDING / 2)
@@ -556,6 +556,13 @@ class SeedTurtleMovementNumberScreen(SeedBIP85SelectChildIndexScreen):
 class SeedDoorNumberScreen(SeedBIP85SelectChildIndexScreen):
     def __post_init__(self):
         self.title = translator("Number of Doors")
+
+        super().__post_init__()
+    
+@dataclass
+class SeedRandomMnemonicNumberScreen(SeedBIP85SelectChildIndexScreen):
+    def __post_init__(self):
+        self.title = translator("Number of Mnemonics")
 
         super().__post_init__()
 

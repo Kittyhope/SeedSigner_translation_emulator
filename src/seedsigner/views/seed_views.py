@@ -1018,10 +1018,11 @@ class SeedExportXpubQRDisplayView(View):
     View Seed Words flow
 ****************************************************************************"""
 class SeedWordsWarningView(View):
-    def __init__(self, seed_num: int, bip85_data: dict = None):
+    def __init__(self, seed_num: int, bip85_data: dict = None, total_words: int = None):
         super().__init__()
         self.seed_num = seed_num
         self.bip85_data = bip85_data
+        self.total_words = total_words
 
 
     def run(self):
@@ -1030,7 +1031,8 @@ class SeedWordsWarningView(View):
             view_args=dict(
                 seed_num=self.seed_num,
                 page_index=0,
-                bip85_data=self.bip85_data
+                bip85_data=self.bip85_data,
+                total_words=self.total_words
             ),
             skip_current_view=True,  # Prevent going BACK to WarningViews
         )
@@ -1053,7 +1055,7 @@ class SeedWordsWarningView(View):
 
 
 class SeedWordsView(View):
-    def __init__(self, seed_num: int, bip85_data: dict = None, page_index: int = 0):
+    def __init__(self, seed_num: int, bip85_data: dict = None, page_index: int = 0, total_words: int = None):
         super().__init__()
         self.seed_num = seed_num
         if self.seed_num is None:
@@ -1062,6 +1064,7 @@ class SeedWordsView(View):
             self.seed = self.controller.get_seed(self.seed_num)
         self.bip85_data = bip85_data
         self.page_index = page_index
+        self.total_words = total_words
 
 
     def run(self):
@@ -1077,10 +1080,14 @@ class SeedWordsView(View):
         else:
             mnemonic = self.seed.mnemonic_display_list
             title = translator("Seed Words")
+            
+        if self.total_words is not None:
+            mnemonic = mnemonic[:self.total_words]
+        
         words = mnemonic[self.page_index*words_per_page:(self.page_index + 1)*words_per_page]
 
         button_data = []
-        num_pages = int(len(mnemonic)/words_per_page)
+        num_pages = (len(mnemonic) + words_per_page - 1) // words_per_page
         if self.page_index < num_pages - 1 or self.seed_num is None:
             button_data.append(NEXT)
         else:
@@ -1101,12 +1108,12 @@ class SeedWordsView(View):
             if self.seed_num is None and self.page_index == num_pages - 1:
                 return Destination(
                     SeedWordsBackupTestPromptView,
-                    view_args=dict(seed_num=self.seed_num, bip85_data=self.bip85_data),
+                    view_args=dict(seed_num=self.seed_num, bip85_data=self.bip85_data, total_words=self.total_words)
                 )
             else:
                 return Destination(
                     SeedWordsView,
-                    view_args=dict(seed_num=self.seed_num, page_index=self.page_index + 1, bip85_data=self.bip85_data)
+                    view_args=dict(seed_num=self.seed_num, page_index=self.page_index + 1, bip85_data=self.bip85_data, total_words=self.total_words)
                 )
 
         elif button_data[selected_menu_num] == DONE:
@@ -1228,11 +1235,11 @@ class SeedBIP85InvalidChildIndexView(View):
     Seed Words Backup Test
 ****************************************************************************"""
 class SeedWordsBackupTestPromptView(View):
-    def __init__(self, seed_num: int, bip85_data: dict = None):
+    def __init__(self, seed_num: int, bip85_data: dict = None, total_words: int = None):
         super().__init__()
         self.seed_num = seed_num
         self.bip85_data = bip85_data
-
+        self.total_words = total_words
 
     def run(self):
         VERIFY = translator("Verify")
@@ -1245,21 +1252,26 @@ class SeedWordsBackupTestPromptView(View):
         if button_data[selected_menu_num] == VERIFY:
             return Destination(
                 SeedWordsBackupTestView,
-                view_args=dict(seed_num=self.seed_num, bip85_data=self.bip85_data),
+                view_args=dict(seed_num=self.seed_num, bip85_data=self.bip85_data, total_words=self.total_words),
             )
 
         elif button_data[selected_menu_num] == SKIP:
-            if self.seed_num is not None:
-                return Destination(SeedOptionsView, view_args=dict(seed_num=self.seed_num))
+            if self.total_words is None:
+                if self.seed_num is not None:
+                    return Destination(SeedOptionsView, view_args=dict(seed_num=self.seed_num))
+                else:
+                    return Destination(SeedFinalizeView)
             else:
-                return Destination(SeedFinalizeView)
+                from seedsigner.views.tools_views import ToolsCustomEntropyOptionsView
+                return Destination(ToolsCustomEntropyOptionsView)
 
 
 
 class SeedWordsBackupTestView(View):
-    def __init__(self, seed_num: int, bip85_data: dict = None, confirmed_list: List[bool] = None, cur_index: int = None):
+    def __init__(self, seed_num: int, bip85_data: dict = None, confirmed_list: List[bool] = None, cur_index: int = None, total_words: int = None):
         super().__init__()
         self.seed_num = seed_num
+        self.total_words = total_words
         if self.seed_num is None:
             self.seed = self.controller.storage.get_pending_seed()
         else:
@@ -1270,7 +1282,7 @@ class SeedWordsBackupTestView(View):
             self.mnemonic_list = self.seed.get_bip85_child_mnemonic(self.bip85_data["child_index"], self.bip85_data["num_words"]).split()
         else:
             self.mnemonic_list = self.seed.mnemonic_display_list
-
+        self.mnemonic_list = self.mnemonic_list[:self.total_words]
         self.confirmed_list = confirmed_list
         if not self.confirmed_list:
             self.confirmed_list = []
@@ -1306,13 +1318,13 @@ class SeedWordsBackupTestView(View):
                 # Successfully confirmed the full mnemonic!
                 return Destination(
                     SeedWordsBackupTestSuccessView,
-                    view_args=dict(seed_num=self.seed_num),
+                    view_args=dict(seed_num=self.seed_num, total_words=self.total_words)
                 )
             else:
                 # Continue testing the remaining words
                 return Destination(
                     SeedWordsBackupTestView,
-                    view_args=dict(seed_num=self.seed_num, confirmed_list=self.confirmed_list, bip85_data=self.bip85_data),
+                    view_args=dict(seed_num=self.seed_num, confirmed_list=self.confirmed_list, bip85_data=self.bip85_data, total_words=self.total_words),
                 )
 
         else:
@@ -1325,19 +1337,21 @@ class SeedWordsBackupTestView(View):
                     cur_index=self.cur_index,
                     wrong_word=button_data[selected_menu_num],
                     confirmed_list=self.confirmed_list,
+                    total_words=self.total_words
                 )
             )
 
 
 
 class SeedWordsBackupTestMistakeView(View):
-    def __init__(self, seed_num: int, bip85_data: dict = None, cur_index: int = None, wrong_word: str = None, confirmed_list: List[bool] = None):
+    def __init__(self, seed_num: int, bip85_data: dict = None, cur_index: int = None, wrong_word: str = None, confirmed_list: List[bool] = None, total_words: int = None):
         super().__init__()
         self.seed_num = seed_num
         self.bip85_data = bip85_data
         self.cur_index = cur_index
         self.wrong_word = wrong_word
         self.confirmed_list = confirmed_list
+        self.total_words = total_words
 
 
     def run(self):
@@ -1356,7 +1370,7 @@ class SeedWordsBackupTestMistakeView(View):
         if button_data[selected_menu_num] == REVIEW:
             return Destination(
                 SeedWordsView,
-                view_args=dict(seed_num=self.seed_num, bip85_data=self.bip85_data),
+                view_args=dict(seed_num=self.seed_num, bip85_data=self.bip85_data, total_words=self.total_words),
             )
 
         elif button_data[selected_menu_num] == RETRY:
@@ -1367,15 +1381,17 @@ class SeedWordsBackupTestMistakeView(View):
                     confirmed_list=self.confirmed_list,
                     cur_index=self.cur_index,
                     bip85_data=self.bip85_data,
+                    total_words=self.total_words,
                 )
             )
 
 
 
 class SeedWordsBackupTestSuccessView(View):
-    def __init__(self, seed_num: int):
+    def __init__(self, seed_num: int, total_words: int = None):
         super().__init__()
         self.seed_num = seed_num
+        self.total_words = total_words
 
     def run(self):
         LargeIconStatusScreen(
@@ -1385,11 +1401,14 @@ class SeedWordsBackupTestSuccessView(View):
             text=translator("All mnemonic backup words were successfully verified!"),
             button_data=[translator("OK")]
         ).display()
-
-        if self.seed_num is not None:
-            return Destination(SeedOptionsView, view_args=dict(seed_num=self.seed_num), clear_history=True)
+        if self.total_words is None:
+            if self.seed_num is not None:
+                return Destination(SeedOptionsView, view_args=dict(seed_num=self.seed_num), clear_history=True)
+            else:
+                return Destination(SeedFinalizeView)
         else:
-            return Destination(SeedFinalizeView)
+            from seedsigner.views.tools_views import ToolsCustomEntropyOptionsView
+            return Destination(ToolsCustomEntropyOptionsView)
 
 
 

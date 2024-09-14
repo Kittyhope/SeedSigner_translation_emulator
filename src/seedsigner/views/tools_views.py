@@ -9,13 +9,11 @@ import nacl.utils
 from embit.descriptor import Descriptor
 from PIL import Image
 from PIL.ImageOps import autocontrast
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
 
 from seedsigner.controller import Controller
 from seedsigner.gui.components import FontAwesomeIconConstants, GUIConstants, SeedSignerIconConstants
 from seedsigner.gui.screens import (RET_CODE__BACK_BUTTON, ButtonListScreen, WarningScreen)
-from seedsigner.gui.screens.seed_screens import SeedTurtleMovementNumberScreen, SeedDoorNumberScreen
+from seedsigner.gui.screens.seed_screens import SeedTurtleMovementNumberScreen, SeedDoorNumberScreen, SeedRandomMnemonicNumberScreen
 from seedsigner.gui.screens.tools_screens import (ToolsCalcFinalWordDoneScreen, ToolsCalcFinalWordFinalizePromptScreen,
     ToolsCalcFinalWordScreen, ToolsCoinFlipEntryScreen, ToolsDiceEntropyEntryScreen, ToolsImageEntropyFinalImageScreen,
     ToolsImageEntropyLivePreviewScreen, ToolsAddressExplorerAddressTypeScreen,ToolsCustomDoorEntropyScreen, TurtleSeedGenerationScreen)
@@ -741,18 +739,6 @@ def sha3_256_hash(data):
 def xor_bytes(a, b):
     return bytes(x ^ y for x, y in zip(a, b))
 
-def mix_entropy(*entropy_sources):
-    key = os.urandom(32)
-    nonce = os.urandom(16)
-    cipher = Cipher(algorithms.AES(key), modes.CTR(nonce), backend=default_backend())
-    encryptor = cipher.encryptor()
-    
-    mixed = b''
-    for source in entropy_sources:
-        mixed += encryptor.update(source)
-    
-    return mixed
-
 def extract_bits(hash_value, num_bits):
     if num_bits > 256:
         raise ValueError("요청된 비트 수가 해시의 길이를 초과합니다.")
@@ -773,9 +759,7 @@ def generate_random_entropy(num_bits):
 
     xor_result = xor_bytes(xor_bytes(openssl_hash, dev_random_hash), libsodium_hash)
 
-    mixed_entropy = mix_entropy(openssl_bytes, dev_random_bytes, libsodium_bytes)
-
-    final_hash = sha3_256_hash(xor_result + mixed_entropy)
+    final_hash = sha3_256_hash(xor_result)
 
     return final_hash[:num_bits // 8 + (1 if num_bits % 8 else 0)]
 
@@ -828,12 +812,11 @@ class ToolsCustomEntropyMnemonicLengthView(View):
         else:
             num_bits = 256
 
-        return Destination(ToolsCustomEntropyOptionsView, view_args=dict(num_bits=num_bits))
+        return Destination(ToolsCustomEntropyOptionsView)
 
 class ToolsCustomEntropyOptionsView(View):
-    def __init__(self, num_bits: int):
+    def __init__(self):
         super().__init__()
-        self.num_bits = num_bits
 
     def run(self):
         ID = (translator("ID"), SeedSignerIconConstants.FINGERPRINT)
@@ -865,6 +848,8 @@ class ToolsCustomEntropyOptionsView(View):
             return Destination(TurtleSeedGenerationView)  
         elif button_data[selected_menu_num] == SEEDSIGNER_SETTINGS:
             return Destination(CustomSettingsMenuView)
+        elif button_data[selected_menu_num] == MNEMONIC:
+            return Destination(ToolsCustomMnemonicView)
         
 class ToolsCustomDoorEntropyView(View):
     def __init__(self):
@@ -927,3 +912,27 @@ class TurtleSeedGenerationView(View):
         #self.controller.storage.set_pending_seed(seed)
 
         return Destination(BackStackView)
+class ToolsCustomMnemonicView(View):
+    def run(self):
+        ret = self.run_screen(
+            SeedRandomMnemonicNumberScreen,
+        )
+
+        if ret == RET_CODE__BACK_BUTTON:
+            return Destination(BackStackView)
+
+        try:
+            num_words = int(ret)
+            if num_words < 1 or num_words > 24:
+                raise ValueError
+        except ValueError:
+            return Destination(WarningScreen, view_args={"text": translator("Invalid number of words. Please enter a number between 1 and 24.")})
+
+        # Generate a full 24-word mnemonic
+        entropy = generate_random_entropy(256)  # 256 bits for 24 words
+        full_mnemonic = mnemonic_generation.generate_mnemonic_from_bytes(entropy)
+
+        seed = Seed(full_mnemonic, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__WORDLIST_LANGUAGE))
+        self.controller.storage.set_pending_seed(seed)
+        
+        return Destination(SeedWordsWarningView, view_args={"seed_num": None, "total_words": num_words}, clear_history=True)
