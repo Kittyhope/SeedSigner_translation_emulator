@@ -3,8 +3,9 @@ import time
 from dataclasses import dataclass
 from PIL.ImageOps import autocontrast
 from typing import List
-from seedsigner.gui.components import Button, CheckboxButton, CheckedSelectionButton, FontAwesomeIconConstants, Fonts, GUIConstants, Icon, IconButton, IconTextLine, TextArea
+from seedsigner.gui.components import Button, CheckboxButton, CheckedSelectionButton, FontAwesomeIconConstants, Fonts, GUIConstants, Icon, IconButton, IconTextLine, TextArea, SeedSignerIconConstants
 from seedsigner.gui.screens.scan_screens import ScanScreen
+from seedsigner.gui.screens import RET_CODE__BACK_BUTTON
 
 from seedsigner.gui.screens.screen import BaseScreen, BaseTopNavScreen, ButtonListScreen
 from seedsigner.hardware.buttons import HardwareButtonsConstants
@@ -50,7 +51,118 @@ class SettingsEntryUpdateSelectionScreen(ButtonListScreen):
             ))
 
 class CustomSettingsEntryUpdateSelectionScreen(SettingsEntryUpdateSelectionScreen):
-    pass
+    def __post_init__(self):
+        super().__post_init__()
+        
+        # Add SAVE button
+        self.save_button = Button(
+            text="SAVE",
+            width=60,
+            height=30,
+            screen_x=self.canvas_width - 70,  # Adjust as needed
+            screen_y=10,  # Adjust as needed
+            outline_color=GUIConstants.ACCENT_COLOR
+        )
+        self.components.append(self.save_button)
+        self.save_button_selected = False
+
+    def _run(self):
+        while True:
+            ret = self._run_callback()
+            if ret is not None:
+                return ret
+
+            user_input = self.hw_inputs.wait_for(
+                HardwareButtonsConstants.ALL_KEYS,
+                check_release=True,
+                release_keys=HardwareButtonsConstants.KEYS__ANYCLICK
+            )
+
+            with self.renderer.lock:
+                if (self.top_nav.is_selected or self.save_button_selected) and user_input == HardwareButtonsConstants.KEY_UP:
+                    pass
+
+                elif not self.top_nav.is_selected and not self.save_button_selected and (
+                        user_input == HardwareButtonsConstants.KEY_LEFT or (
+                            user_input == HardwareButtonsConstants.KEY_UP and self.selected_button == 0
+                        )
+                    ):
+                    # Move selection up to top_nav
+                    if self.top_nav.show_back_button or self.top_nav.show_power_button:
+                        self.buttons[self.selected_button].is_selected = False
+                        self.buttons[self.selected_button].render()
+                        self.top_nav.is_selected = True
+                        self.top_nav.render_buttons()
+
+                elif user_input == HardwareButtonsConstants.KEY_RIGHT:
+                    # Move to save button
+                    if self.top_nav.is_selected:
+                        self.top_nav.is_selected = False
+                        self.top_nav.render_buttons()
+                    elif not self.save_button_selected:
+                        self.buttons[self.selected_button].is_selected = False
+                        self.buttons[self.selected_button].render()
+                    self.save_button_selected = True
+                    self.save_button.is_selected = True
+                    self.save_button.render()
+
+                elif user_input == HardwareButtonsConstants.KEY_LEFT:
+                    # Move from save button to top_nav
+                    if self.save_button_selected:
+                        self.save_button_selected = False
+                        self.save_button.is_selected = False
+                        self.save_button.render()
+                        self.top_nav.is_selected = True
+                        self.top_nav.render_buttons()
+
+                elif user_input == HardwareButtonsConstants.KEY_DOWN:
+                    if self.top_nav.is_selected or self.save_button_selected:
+                        if self.top_nav.is_selected:
+                            self.top_nav.is_selected = False
+                            self.top_nav.render_buttons()
+                        elif self.save_button_selected:
+                            self.save_button_selected = False
+                            self.save_button.is_selected = False
+                            self.save_button.render()
+                        
+                        # Select the first button
+                        self.selected_button = 0
+                        self.buttons[0].is_selected = True
+                        self._render_buttons()
+                    elif self.selected_button < len(self.buttons) - 1:
+                        # Move down the list
+                        self.buttons[self.selected_button].is_selected = False
+                        self.selected_button += 1
+                        self.buttons[self.selected_button].is_selected = True
+                        self._render_buttons()
+
+                elif user_input == HardwareButtonsConstants.KEY_UP:
+                    if self.selected_button > 0:
+                        # Move up the list
+                        self.buttons[self.selected_button].is_selected = False
+                        self.selected_button -= 1
+                        self.buttons[self.selected_button].is_selected = True
+                        self._render_buttons()
+                    elif self.selected_button == 0:
+                        # Move to save button
+                        self.buttons[self.selected_button].is_selected = False
+                        self.save_button_selected = True
+                        self.save_button.is_selected = True
+                        self.save_button.render()
+
+                elif user_input in HardwareButtonsConstants.KEYS__ANYCLICK:
+                    if self.top_nav.is_selected:
+                        return RET_CODE__BACK_BUTTON
+                    elif self.save_button_selected:
+                        return "SAVE"
+                    else:
+                        return self.selected_button
+
+                self.renderer.show_image()
+
+    def _render_buttons(self):
+        for button in self.buttons:
+            button.render()
 
 @dataclass
 class IOTestScreen(BaseTopNavScreen):

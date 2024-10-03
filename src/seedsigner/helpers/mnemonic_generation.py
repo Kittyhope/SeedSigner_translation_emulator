@@ -59,7 +59,14 @@ def calculate_checksum(mnemonic: list | str, wordlist_language_code: str = Setti
 def generate_mnemonic_from_bytes(entropy_bytes, wordlist_language_code: str = SettingsConstants.WORDLIST_LANGUAGE__ENGLISH) -> list[str]:
     return bip39.mnemonic_from_bytes(entropy_bytes, wordlist=Seed.get_wordlist(wordlist_language_code)).split()
 
-
+def mnemonic_to_bits(mnemonic: list[str], wordlist_language_code: str = SettingsConstants.WORDLIST_LANGUAGE__ENGLISH) -> str:
+    wordlist = Seed.get_wordlist(wordlist_language_code)
+    bits = ""
+    for word in mnemonic:
+        if word in wordlist:
+            index = wordlist.index(word)
+            bits += format(index, '011b')  # Each word is represented by 11 bits
+    return bits
 
 def generate_mnemonic_from_dice(roll_data: str, wordlist_language_code: str = SettingsConstants.WORDLIST_LANGUAGE__ENGLISH) -> list[str]:
     """

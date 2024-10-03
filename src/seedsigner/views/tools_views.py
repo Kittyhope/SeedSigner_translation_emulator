@@ -12,7 +12,7 @@ from PIL.ImageOps import autocontrast
 
 from seedsigner.controller import Controller
 from seedsigner.gui.components import FontAwesomeIconConstants, GUIConstants, SeedSignerIconConstants
-from seedsigner.gui.screens import (RET_CODE__BACK_BUTTON, ButtonListScreen, WarningScreen)
+from seedsigner.gui.screens import (RET_CODE__BACK_BUTTON, ButtonListScreen, WarningScreen, ButtonListScreenWithConfirm, CONFIRM_BUTTON, DireWarningScreen)
 from seedsigner.gui.screens.seed_screens import SeedTurtleMovementNumberScreen, SeedDoorNumberScreen, SeedRandomMnemonicNumberScreen
 from seedsigner.gui.screens.tools_screens import (ToolsCalcFinalWordDoneScreen, ToolsCalcFinalWordFinalizePromptScreen,
     ToolsCalcFinalWordScreen, ToolsCoinFlipEntryScreen, ToolsDiceEntropyEntryScreen, ToolsImageEntropyFinalImageScreen,
@@ -20,11 +20,12 @@ from seedsigner.gui.screens.tools_screens import (ToolsCalcFinalWordDoneScreen, 
 from seedsigner.helpers import embit_utils, mnemonic_generation
 from seedsigner.models.encode_qr import GenericStaticQrEncoder
 from seedsigner.models.seed import Seed
+from seedsigner.models.seed_storage import entropy_storage_instance
 from seedsigner.models.settings_definition import SettingsConstants
 from seedsigner.views.seed_views import SeedDiscardView, SeedFinalizeView, SeedMnemonicEntryView, SeedOptionsView, SeedWordsWarningView, SeedExportXpubScriptTypeView, SeedAddIDView, SeedAddPASSWORDView
 from seedsigner.views.language_views import translator
 from seedsigner.views.settings_views import CustomSettingsMenuView
-from .view import View, Destination, BackStackView
+from .view import View, Destination, BackStackView, MainMenuView
 
 logger = logging.getLogger(__name__)
 
@@ -791,7 +792,7 @@ class ToolsRandomEntropyMnemonicLengthView(View):
         
         from seedsigner.views.seed_views import SeedWordsWarningView
         return Destination(SeedWordsWarningView, view_args={"seed_num": None}, clear_history=True)
-    
+"""
 class ToolsCustomEntropyMnemonicLengthView(View):
     def run(self):
         TWELVE_WORDS = translator("12 words")
@@ -813,47 +814,151 @@ class ToolsCustomEntropyMnemonicLengthView(View):
             num_bits = 256
 
         return Destination(ToolsCustomEntropyOptionsView)
-
+"""
 class ToolsCustomEntropyOptionsView(View):
     def __init__(self):
         super().__init__()
 
     def run(self):
-        ID = (translator("ID"), SeedSignerIconConstants.FINGERPRINT)
-        PASSWORD = (translator("Password"), SeedSignerIconConstants.PASSPHRASE)
-        DOOR = (translator("Door"), SeedSignerIconConstants.QRCODE)
-        TURTLE = (translator("Turtle"), SeedSignerIconConstants.BITCOIN)
-        SEEDSIGNER_SETTINGS = (translator("Seedsigner settings"), SeedSignerIconConstants.SETTINGS)
-        MNEMONIC = (translator("Mnemonic"), SeedSignerIconConstants.SEEDS)
+        # 각 소스에 대한 엔트로피 길이를 확인
+        sources = [
+            ("ID", "ID", SeedSignerIconConstants.FINGERPRINT),
+            ("PASSWORD", "Password", SeedSignerIconConstants.PASSPHRASE),
+            ("DOOR", "Door", SeedSignerIconConstants.QRCODE),
+            ("TURTLE", "Turtle", SeedSignerIconConstants.BITCOIN),
+            ("MNEMONIC", "Mnemonic", SeedSignerIconConstants.SEEDS)
+        ]
 
-        button_data = [ID, PASSWORD, DOOR, TURTLE, SEEDSIGNER_SETTINGS, MNEMONIC]
+        if self.settings.get_value(SettingsConstants.SETTING__CUSTOM_ENTROPY_SEEDSIGNER_SETTINGS) == SettingsConstants.OPTION__ENABLED:
+            sources.append(("SEEDSIGNER_SETTINGS", "Setting Entropy", SeedSignerIconConstants.SETTINGS))
+
+        button_data = []
+        for source, label, left_icon in sources:
+            entropy_length = entropy_storage_instance.get_entropy_length(source)
+            right_icon = SeedSignerIconConstants.CHECK if entropy_length > 0 else None
+            text = translator(label) + (f" ({entropy_length} bits)" if entropy_length > 0 else "")
+            button_data.append((text, left_icon, "", "", right_icon))  # icon_color, button_label_color에 빈 문자열
 
         selected_menu_num = self.run_screen(
-            ButtonListScreen,
+            ButtonListScreenWithConfirm,
             title=translator("Custom"),
             is_bottom_list=True,
             is_button_text_centered=False,
             button_data=button_data,
         )
 
+        # 선택된 메뉴 처리
         if selected_menu_num == RET_CODE__BACK_BUTTON:
-            return Destination(BackStackView)
-        if button_data[selected_menu_num] == ID:
-            return Destination(SeedAddIDView)
-        elif button_data[selected_menu_num] == PASSWORD:
-            return Destination(SeedAddPASSWORDView)
-        elif button_data[selected_menu_num] == DOOR:
-            return Destination(ToolsCustomDoorEntropyView)
-        elif button_data[selected_menu_num] == TURTLE:
-            return Destination(TurtleSeedGenerationView)  
-        elif button_data[selected_menu_num] == SEEDSIGNER_SETTINGS:
-            return Destination(CustomSettingsMenuView)
-        elif button_data[selected_menu_num] == MNEMONIC:
-            return Destination(ToolsCustomMnemonicView)
+            return Destination(CustomModeExitDialogView)
+        elif selected_menu_num == CONFIRM_BUTTON:
+            combined_entropy = entropy_storage_instance.get_combined_entropy()
+            entropy_length = len(combined_entropy)
+            logger.info(combined_entropy)
+            logger.info(entropy_length)
+            
+            if 0 < entropy_length <= 128:
+                return Destination(ConfirmAutoModeView)
+            elif entropy_length > 128:
+                return Destination(CustomEntropyWarningView)
+            else:
+                return Destination(CustomEntropyEmptyWarningView)
+
+        # 선택된 소스에 맞는 뷰로 이동
+        source_views = {
+            "ID": SeedAddIDView,
+            "PASSWORD": SeedAddPASSWORDView,
+            "DOOR": ToolsCustomDoorEntropyView,
+            "TURTLE": TurtleSeedGenerationView,
+            "MNEMONIC": ToolsCustomMnemonicView
+        }
+
+        if self.settings.get_value(SettingsConstants.SETTING__CUSTOM_ENTROPY_SEEDSIGNER_SETTINGS) == SettingsConstants.OPTION__ENABLED:
+            source_views["SEEDSIGNER_SETTINGS"] = CustomSettingsMenuView
+
+        selected_source = sources[selected_menu_num][0]
+        return Destination(source_views[selected_source])
         
+class CustomModeExitDialogView(View):
+    CONTINUE = translator("Continue Custom Mode")
+    MAIN_MENU = (translator("Return to Main Menu"), None, None, "red")
+
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        button_data = [self.CONTINUE, self.MAIN_MENU]
+        
+        selected_menu_num = self.run_screen(
+            WarningScreen,
+            title=translator("Exit Custom Mode?"),
+            status_headline=None,
+            text=translator("All progress in Custom Mode will be erased"),
+            show_back_button=False,
+            button_data=button_data,
+        )
+
+        if button_data[selected_menu_num] == self.CONTINUE:
+            return Destination(BackStackView)
+        elif button_data[selected_menu_num] == self.MAIN_MENU:
+            entropy_storage_instance.clear_all_entropy()
+            return Destination(MainMenuView)
+
+class ConfirmAutoModeView(View):
+    def run(self):
+        AUTO_MODE = translator("Continue with Auto Mode")
+        GO_BACK = translator("Go Back")
+        
+        button_data = [AUTO_MODE, GO_BACK]
+        
+        selected_menu_num = self.run_screen(
+            WarningScreen,
+            title=translator("Auto Mode Confirmation"),
+            text=translator("Do you want to generate the remaining entropy in Auto mode?"),
+            button_data=button_data,
+        )
+
+        if selected_menu_num == RET_CODE__BACK_BUTTON or button_data[selected_menu_num] == GO_BACK:
+            return Destination(ToolsCustomEntropyOptionsView)
+        elif button_data[selected_menu_num] == AUTO_MODE:
+            return Destination(ToolsAutoEntropyOptionsView)
+
+class CustomEntropyWarningView(View):
+    def run(self):
+        button_data = [translator("Back to Custom")]
+        
+        selected_menu_num = self.run_screen(
+            DireWarningScreen,
+            title=translator("Entropy Warning"),
+            status_headline=None,
+            text=translator("Custom entropy must be 128 bits or less. Please reduce the amount of entropy."),
+            show_back_button=False,
+            button_data=button_data,
+        )
+
+        return Destination(ToolsCustomEntropyOptionsView)
+
+class CustomEntropyEmptyWarningView(View):
+    def run(self):
+        button_data = [translator("Back to Custom")]
+        
+        selected_menu_num = self.run_screen(
+            DireWarningScreen,
+            title=translator("No Entropy"),
+            status_headline=None,
+            text=translator("No entropy has been added. Please add some entropy before confirming."),
+            show_back_button=False,
+            button_data=button_data,
+        )
+
+        return Destination(ToolsCustomEntropyOptionsView)
+
 class ToolsCustomDoorEntropyView(View):
     def __init__(self):
         super().__init__()
+
+    def door_to_binary(selfr, selected_door):        
+        binary = format(selected_door, '08b')
+        return binary
 
     def run(self):
         ret = self.run_screen(
@@ -869,7 +974,7 @@ class ToolsCustomDoorEntropyView(View):
             # Handle invalid input
             return Destination(WarningScreen, view_args={"text": translator("Invalid number of doors")})
 
-        selected_doors = []
+        selected_doors = ""
         for i in range(num_doors):
             door_screen = ToolsCustomDoorEntropyScreen(
                 title=translator("Select Door {}/{}").format(i+1, num_doors)
@@ -879,7 +984,10 @@ class ToolsCustomDoorEntropyView(View):
             if selected_door == RET_CODE__BACK_BUTTON:
                 return Destination(BackStackView)
 
-            selected_doors.append(selected_door)
+            selected_doors += self.door_to_binary(selected_door)
+
+        entropy_storage_instance.add_entropy("DOOR", selected_doors)
+        selected_doors=""
         return Destination(BackStackView)
     
 class TurtleSeedGenerationView(View):
@@ -902,15 +1010,7 @@ class TurtleSeedGenerationView(View):
         turtle_screen = TurtleSeedGenerationScreen(num_moves=num_moves)
         moves = turtle_screen.display()
 
-        # Convert moves to a string and use it as entropy
-        entropy = ''.join(moves)
-        
-        # Generate seed from entropy
-        #seed = Seed.from_entropy(entropy)
-
-        # Store the generated seed
-        #self.controller.storage.set_pending_seed(seed)
-
+        entropy_storage_instance.add_entropy("TURTLE", moves)
         return Destination(BackStackView)
 class ToolsCustomMnemonicView(View):
     def run(self):
@@ -934,5 +1034,53 @@ class ToolsCustomMnemonicView(View):
 
         seed = Seed(full_mnemonic, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__WORDLIST_LANGUAGE))
         self.controller.storage.set_pending_seed(seed)
-        
+
+        mnemonic_words = full_mnemonic[:num_words]
+        mnemonic_bits = mnemonic_generation.mnemonic_to_bits(mnemonic_words, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__WORDLIST_LANGUAGE))
+        entropy_storage_instance.add_entropy("MNEMONIC", mnemonic_bits)
         return Destination(SeedWordsWarningView, view_args={"seed_num": None, "total_words": num_words}, clear_history=True)
+    
+class ToolsAutoEntropyOptionsView(View):
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        ID_AUTO = (translator("ID"), SeedSignerIconConstants.FINGERPRINT)
+        PASSWORD_AUTO = (translator("Password"), SeedSignerIconConstants.PASSPHRASE)
+        DOOR_AUTO = (translator("Door"), SeedSignerIconConstants.QRCODE)
+        TURTLE_AUTO = (translator("Turtle)"), SeedSignerIconConstants.BITCOIN)
+        MNEMONIC_AUTO = (translator("Mnemonic"), SeedSignerIconConstants.SEEDS)
+
+        button_data = [ID_AUTO, PASSWORD_AUTO, DOOR_AUTO, TURTLE_AUTO, MNEMONIC_AUTO]
+
+        if self.settings.get_value(SettingsConstants.SETTING__CUSTOM_ENTROPY_SEEDSIGNER_SETTINGS) == SettingsConstants.OPTION__ENABLED:
+            SEEDSIGNER_SETTINGS_AUTO = (translator("Setting Entropy"), SeedSignerIconConstants.SETTINGS)
+            button_data.append(SEEDSIGNER_SETTINGS_AUTO)
+
+        selected_menu_num = self.run_screen(
+            ButtonListScreenWithConfirm,
+            title=translator("Auto"),
+            is_bottom_list=True,
+            is_button_text_centered=False,
+            button_data=button_data,
+        )
+
+        if selected_menu_num == RET_CODE__BACK_BUTTON:
+            return Destination(ToolsCustomEntropyOptionsView)
+        elif selected_menu_num == CONFIRM_BUTTON:
+            return Destination(MainMenuView)
+"""
+        source_views = {
+            "ID_AUTO": SeedAddIDAutoView,
+            "PASSWORD_AUTO": SeedAddPASSWORDAutoView,
+            "DOOR_AUTO": ToolsCustomDoorEntropyAutoView,
+            "TURTLE_AUTO": TurtleSeedGenerationAutoView,
+            "MNEMONIC_AUTO": ToolsCustomMnemonicAutoView
+        }
+
+        if self.settings.get_value(SettingsConstants.SETTING__CUSTOM_ENTROPY_SEEDSIGNER_SETTINGS) == SettingsConstants.OPTION__ENABLED:
+            source_views["SEEDSIGNER_SETTINGS_AUTO"] = CustomSettingsMenuAutoView
+
+        selected_source = button_data[selected_menu_num][0].split(' ')[0].upper() + '_AUTO'
+        return Destination(source_views[selected_source])
+"""

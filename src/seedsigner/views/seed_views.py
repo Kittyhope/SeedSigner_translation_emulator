@@ -21,6 +21,7 @@ from seedsigner.models.encode_qr import CompactSeedQrEncoder, GenericStaticQrEnc
 from seedsigner.models.psbt_parser import PSBTParser
 from seedsigner.models.qr_type import QRType
 from seedsigner.models.seed import InvalidSeedException, Seed
+from seedsigner.models.seed_storage import entropy_storage_instance
 from seedsigner.models.settings import Settings, SettingsConstants
 from seedsigner.models.settings_definition import SettingsDefinition
 from seedsigner.models.threads import BaseThread, ThreadsafeCounter
@@ -330,6 +331,23 @@ class SeedFinalizeView(View):
         elif button_data[selected_menu_num] == passphrase_button:
             return Destination(SeedAddPassphraseView)
 
+def convert_to_binary(user_input):
+    char_to_binary = {
+        **{chr(i + 65): format(i, '06b') for i in range(26)},  # A-Z
+        **{chr(i + 97): format(i + 26, '06b') for i in range(26)},  # a-z
+        **{str(i): format(i + 52, '06b') for i in range(10)},  # 0-9
+        '!': '111110', '@': '111111',
+    }
+    
+    binary_string = ''
+    for char in user_input:
+        if char in char_to_binary:
+            binary_string += char_to_binary[char]
+        else:
+            raise ValueError(f"Invalid character in input: {char}")
+    
+    return binary_string
+
 class SeedAddIDView(View):
     def __init__(self):
         super().__init__()
@@ -345,9 +363,11 @@ class SeedAddIDView(View):
         if "is_back_button" in ret_dict:
             return Destination(BackStackView)
         elif "user_id_password" in ret_dict:
-            self.USER_ID = ret_dict["user_id_password"]
+            self.USER_ID = convert_to_binary(ret_dict["user_id_password"])
+            entropy_storage_instance.add_entropy("ID", self.USER_ID)
+            self.USER_ID = ""
             return Destination(BackStackView)
-        
+
 class SeedAddPASSWORDView(View):
     def __init__(self):
         super().__init__()
@@ -363,7 +383,9 @@ class SeedAddPASSWORDView(View):
         if "is_back_button" in ret_dict:
             return Destination(BackStackView)
         elif "user_id_password" in ret_dict:
-            self.USER_PASSWORD = ret_dict["user_id_password"]
+            self.USER_PASSWORD = convert_to_binary(ret_dict["user_id_password"])
+            entropy_storage_instance.add_entropy("PASSWORD", self.USER_PASSWORD)
+            self.USER_PASSWORD = ""
             return Destination(BackStackView)
 
 class SeedAddPassphraseView(View):

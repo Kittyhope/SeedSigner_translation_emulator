@@ -210,6 +210,7 @@ class SettingsConstants:
     LABEL__BIP39_PASSPHRASE = "BIP-39 Passphrase"
     LABEL__CUSTOM_EXTENSION = "Custom Extension"   # Terminology used by Electrum seeds
 
+    SETTING__CUSTOM_ENTROPY_SEEDSIGNER_SETTINGS = "custom_entropy_seedsigner_settings"
 
 @dataclass
 class SettingsEntry:
@@ -535,6 +536,14 @@ class SettingsDefinition:
                       type=SettingsConstants.TYPE__FREE_ENTRY,
                       visibility=SettingsConstants.VISIBILITY__HIDDEN,
                       default_value=62),
+        SettingsEntry(
+            category=SettingsConstants.CATEGORY__FEATURES,
+            attr_name=SettingsConstants.SETTING__CUSTOM_ENTROPY_SEEDSIGNER_SETTINGS,
+            abbreviated_name="cust_ent_ss_set",
+            display_name="Custom Mode Setting Entropy",
+            visibility=SettingsConstants.VISIBILITY__ADVANCED,
+            default_value=SettingsConstants.OPTION__DISABLED
+        ),
     ]
 
     @classmethod

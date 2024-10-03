@@ -23,6 +23,7 @@ def translator(text):
 #   screens with buttons.
 RET_CODE__BACK_BUTTON = 1000
 RET_CODE__POWER_BUTTON = 1001
+CONFIRM_BUTTON = "CONFIRM_BUTTON"
 
 
 
@@ -533,7 +534,156 @@ class ButtonListScreen(BaseTopNavScreen):
                 # Write the screen updates
                 self.renderer.show_image()
 
+@dataclass
+class ButtonListScreenWithConfirm(ButtonListScreen):
+    def __post_init__(self):
+        super().__post_init__()
+        self.confirm_button = IconButton(
+            icon_name=SeedSignerIconConstants.CHECK,
+            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
+            icon_color=GUIConstants.SUCCESS_COLOR,
+            width=GUIConstants.TOP_NAV_BUTTON_SIZE,
+            height=GUIConstants.TOP_NAV_BUTTON_SIZE,
+            screen_x=self.canvas_width - GUIConstants.TOP_NAV_BUTTON_SIZE - GUIConstants.EDGE_PADDING,
+            screen_y=GUIConstants.EDGE_PADDING,
+        )
+        self.confirm_button_selected = False
 
+    def adjust_font_size(self, text, icon_name):
+        max_width = self.canvas_width - (2 * GUIConstants.EDGE_PADDING) - (2 *GUIConstants.COMPONENT_PADDING) - 22
+        if icon_name:
+            icon = Icon(
+                icon_name=icon_name,
+                icon_size=GUIConstants.ICON_INLINE_FONT_SIZE
+            )
+            icon_padding_ = GUIConstants.COMPONENT_PADDING
+            max_width -= icon.width + icon_padding_
+        font_size_sub = self.button_font_size
+        file_path_ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'resources', 'fonts',f'{GUIConstants.BUTTON_FONT_NAME}.ttf'))
+        font_sub = ImageFont.truetype(file_path_, font_size_sub)
+        while font_sub.getlength(text) > max_width and font_size_sub > GUIConstants.BODY_FONT_MIN_SIZE-3:
+            font_size_sub -= 1
+            font_sub = ImageFont.truetype(file_path_, font_size_sub)
+
+        return font_size_sub
+
+    def _render(self):
+        super()._render()
+        self.confirm_button.render()
+
+    def _run(self):
+        while True:
+            ret = self._run_callback()
+            if ret is not None:
+                return ret
+
+            user_input = self.hw_inputs.wait_for(
+                HardwareButtonsConstants.ALL_KEYS,
+                check_release=True,
+                release_keys=HardwareButtonsConstants.KEYS__ANYCLICK
+            )
+
+            with self.renderer.lock:
+                if not self.top_nav.is_selected and not self.confirm_button_selected and (
+                        user_input == HardwareButtonsConstants.KEY_LEFT or (
+                            user_input == HardwareButtonsConstants.KEY_UP and self.selected_button == 0
+                        )
+                    ):
+                    # Move selection up to top_nav
+                    if self.top_nav.show_back_button or self.top_nav.show_power_button:
+                        self.buttons[self.selected_button].is_selected = False
+                        self.buttons[self.selected_button].render()
+                        self.top_nav.is_selected = True
+                        self.top_nav.render_buttons()
+
+                elif user_input == HardwareButtonsConstants.KEY_RIGHT:
+                    # Move to confirm button
+                    if self.top_nav.is_selected:
+                        self.top_nav.is_selected = False
+                        self.top_nav.render_buttons()
+                    elif not self.confirm_button_selected:
+                        self.buttons[self.selected_button].is_selected = False
+                        self.buttons[self.selected_button].render()
+                    self.confirm_button_selected = True
+                    self.confirm_button.is_selected = True
+                    self.confirm_button.render()
+
+                elif user_input == HardwareButtonsConstants.KEY_LEFT:
+                    # New condition: Move from confirm button to top_nav
+                    if self.confirm_button_selected:
+                        self.confirm_button_selected = False
+                        self.confirm_button.is_selected = False
+                        self.confirm_button.render()
+                        self.top_nav.is_selected = True
+                        self.top_nav.render_buttons()
+
+                elif user_input == HardwareButtonsConstants.KEY_UP:
+                    if self.confirm_button_selected:
+                        pass
+                    elif not self.top_nav.is_selected:
+                        cur_selected_button: Button = self.buttons[self.selected_button]
+                        self.selected_button -= 1
+                        next_selected_button: Button = self.buttons[self.selected_button]
+                        cur_selected_button.is_selected = False
+                        next_selected_button.is_selected = True
+                        if self.has_scroll_arrows and next_selected_button.screen_y - next_selected_button.scroll_y + next_selected_button.height < self.top_nav.height:
+                            # Selected a Button that's off the top of the screen
+                            frame_scroll = cur_selected_button.screen_y - next_selected_button.screen_y
+                            for button in self.buttons:
+                                button.scroll_y -= frame_scroll
+                            self._render_visible_buttons()
+                        else:
+                            cur_selected_button.render()
+                            next_selected_button.render()
+
+                elif user_input == HardwareButtonsConstants.KEY_DOWN:
+                    if self.top_nav.is_selected or self.confirm_button_selected:
+                        if self.top_nav.is_selected:
+                            self.top_nav.is_selected = False
+                            self.top_nav.render_buttons()
+                        elif self.confirm_button_selected:
+                            self.confirm_button_selected = False
+                            self.confirm_button.is_selected = False
+                            self.confirm_button.render()
+                        
+                        # Reset scroll position and select the first button
+                        for button in self.buttons:
+                            button.is_selected = False
+                            button.scroll_y = 0  # Reset scroll position
+                        self.selected_button = 0
+                        self.buttons[0].is_selected = True
+                        self._render_visible_buttons()  # Re-render all buttons
+                    elif self.selected_button < len(self.buttons) - 1:
+                        # Existing code for moving down the list
+                        cur_selected_button: Button = self.buttons[self.selected_button]
+                        self.selected_button += 1
+                        next_selected_button: Button = self.buttons[self.selected_button]
+                        cur_selected_button.is_selected = False
+                        next_selected_button.is_selected = True
+                        if self.has_scroll_arrows and (
+                                next_selected_button.screen_y - next_selected_button.scroll_y + next_selected_button.height > self.down_arrow_img_y
+                            ):
+                            # Selected a Button that's off the bottom of the screen
+                            frame_scroll = next_selected_button.screen_y - cur_selected_button.screen_y
+                            for button in self.buttons:
+                                button.scroll_y += frame_scroll
+                            self._render_visible_buttons()
+                        else:
+                            cur_selected_button.render()
+                            next_selected_button.render()
+
+                elif user_input in HardwareButtonsConstants.KEYS__ANYCLICK:
+                    if self.top_nav.is_selected:
+                        return self.top_nav.selected_button
+                    elif self.confirm_button_selected:
+                        return CONFIRM_BUTTON
+                    else:
+                        return self.selected_button
+
+                if user_input == HardwareButtonsConstants.KEY3:
+                    return CONFIRM_BUTTON
+
+                self.renderer.show_image()
 
 @dataclass
 class LargeButtonScreen(BaseTopNavScreen):

@@ -103,3 +103,67 @@ class SeedStorage:
     def discard_pending_mnemonic(self):
         self._pending_mnemonic = []
         self._pending_is_electrum = False
+
+class EntropyStorage:
+    ENTROPY_COMBINE_ORDER = [
+        "ID", "PASSWORD", "DOOR", "TURTLE", "SEEDSIGNER_SETTINGS", "MNEMONIC",
+        "ID_AUTO", "PASSWORD_AUTO", "DOOR_AUTO", "TURTLE_AUTO", "SEEDSIGNER_SETTINGS_AUTO", "MNEMONIC_AUTO"
+    ]
+
+    def __init__(self):
+        self.entropy_sources = {}
+
+    def add_entropy(self, source: str, entropy: str):
+        """
+        Adds or updates the entropy for a given source.
+        """
+        self.entropy_sources[source] = entropy
+
+    def get_entropy(self, source: str):
+        """
+        Retrieves the entropy for a given source.
+        """
+        return self.entropy_sources.get(source, "")
+
+    def remove_entropy(self, source: str):
+        """
+        Removes the entropy for a given source.
+        """
+        self.entropy_sources.pop(source, None)
+
+    def get_all_entropy_sources(self):
+        """
+        Returns a list of all entropy sources that have been added.
+        """
+        return list(self.entropy_sources.keys())
+
+    def clear_all_entropy(self):
+        """
+        Clears all stored entropy.
+        """
+        self.entropy_sources.clear()
+
+    def get_combined_entropy(self):
+        """
+        Returns all entropy sources combined in the specified order.
+        Only includes sources that have been added.
+        """
+        return "".join(self.entropy_sources.get(source, "") for source in self.ENTROPY_COMBINE_ORDER if source in self.entropy_sources)
+    
+    def has_valid_entropy(self, source: str) -> bool:
+        """
+        Checks if the given source has a non-None entropy value.
+        
+        Args:
+            source (str): The entropy source to check.
+        
+        Returns:
+            bool: True if the source exists and has a non-None entropy value, False otherwise.
+        """
+        return source in self.entropy_sources and self.entropy_sources[source] is not None
+    
+    def get_entropy_length(self, source: str) -> int:
+        entropy_len = self.get_entropy(source)
+        return len(entropy_len) if entropy_len else 0
+    
+entropy_storage_instance = EntropyStorage()

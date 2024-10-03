@@ -1102,6 +1102,16 @@ class Button(BaseComponent):
 
             self.right_icon_y = math.ceil((self.height - self.right_icon.height)/2)
 
+    def toggle(self):
+        self.is_checked = not self.is_checked
+        if self.is_checked:
+            self.icon_name = SeedSignerIconConstants.CHECK
+            self.icon_color = GUIConstants.SUCCESS_COLOR
+        else:
+            self.icon_name = None
+            self.icon = None
+            self.icon_selected = None
+        self.render()
 
     def render(self):
         if self.is_selected:

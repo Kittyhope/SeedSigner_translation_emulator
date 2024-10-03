@@ -1,7 +1,7 @@
 from seedsigner.views.view import View, Destination, BackStackView
 from seedsigner.gui.components import FontAwesomeIconConstants, SeedSignerIconConstants
 from seedsigner.gui.screens.screen import ButtonListScreen, RET_CODE__BACK_BUTTON
-from seedsigner.views.tools_views import ToolsImageEntropyLivePreviewView, ToolsDiceEntropyMnemonicLengthView, ToolsRandomEntropyMnemonicLengthView, ToolsCustomEntropyMnemonicLengthView
+from seedsigner.views.tools_views import ToolsImageEntropyLivePreviewView, ToolsDiceEntropyMnemonicLengthView, ToolsRandomEntropyMnemonicLengthView, ToolsCustomEntropyOptionsView
 from seedsigner.views.language_views import translator
 
 class GenerateSeedMenuView(View):
@@ -29,4 +29,4 @@ class GenerateSeedMenuView(View):
         elif button_data[selected_menu_num] == RANDOM:
             return Destination(ToolsRandomEntropyMnemonicLengthView)
         elif button_data[selected_menu_num] == CUSTOM:
-            return Destination(ToolsCustomEntropyMnemonicLengthView)
+            return Destination(ToolsCustomEntropyOptionsView)

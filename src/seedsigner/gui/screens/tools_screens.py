@@ -449,13 +449,57 @@ class DoorGrid:
         self.height = height
         self.renderer = renderer
         self.grid_size = 16
-        self.door_size = min(width, height) // self.grid_size
+        self.door_size = min(width, height) // (self.grid_size) 
         self.grid_start_x = (width - (self.door_size * self.grid_size)) // 2
-        self.grid_start_y = (height - (self.door_size * self.grid_size)) // 2 + 43
+        self.grid_start_y = (height - (self.door_size * self.grid_size)) // 2 + 46
         self.selected_x = 0
         self.selected_y = 0
+        self.number_font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, self.door_size-1)
+        self.highlighted_font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, self.door_size+1)
 
     def render(self):
+        for x in range(self.grid_size):
+            number = str(x + 1)
+            bbox = self.image_draw.textbbox((0, 0), number, font=self.number_font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            if x == self.selected_x:
+                font = self.highlighted_font
+                color = GUIConstants.ACCENT_COLOR
+            else:
+                font = self.number_font
+                color = GUIConstants.BODY_FONT_COLOR
+            
+            self.image_draw.text(
+                (self.grid_start_x + x * self.door_size + self.door_size // 2, 
+                 self.grid_start_y - self.door_size // 2 - 2),
+                number,
+                font=font,
+                fill=color,
+                anchor="mm"
+            )
+
+        for y in range(self.grid_size):
+            number = str(y + 1)
+            bbox = self.image_draw.textbbox((0, 0), number, font=self.number_font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            if y == self.selected_y:
+                font = self.highlighted_font
+                color = GUIConstants.ACCENT_COLOR
+            else:
+                font = self.number_font
+                color = GUIConstants.BODY_FONT_COLOR
+            
+            self.image_draw.text(
+                (self.grid_start_x - self.door_size // 2 - 2,
+                 self.grid_start_y + y * self.door_size + self.door_size // 2),
+                number,
+                font=font,
+                fill=color,
+                anchor="mm"
+            )
+
         for y in range(self.grid_size):
             for x in range(self.grid_size):
                 door_x =  self.grid_start_x + x * self.door_size
@@ -513,6 +557,7 @@ class DoorGrid:
 class ToolsCustomDoorEntropyScreen(BaseTopNavScreen):
     def __init__(self, title):
         super().__init__(title=title, show_back_button=False)
+        self.top_nav.title.screen_y = -5
         self.door_grid = DoorGrid(
             canvas=self.canvas,
             image_draw=self.image_draw,
@@ -554,7 +599,7 @@ class TurtleSeedGenerationScreen(BaseScreen):
         self.turtle_x = 5
         self.turtle_y = 5
         self.grid = [[' ' for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-        self.moves = []
+        self.moves = ""
         self.num_moves = num_moves
         self.cell_size = 18
         self.grid_start_x = (self.canvas_width - (self.cell_size * self.grid_size)) // 2
@@ -669,7 +714,7 @@ class TurtleSeedGenerationScreen(BaseScreen):
         ).render()
 
     def _run(self):
-        while len(self.moves) < self.num_moves:
+        while len(self.moves)//3 < self.num_moves:
             self._render()
             self.renderer.show_image()
 
@@ -677,30 +722,30 @@ class TurtleSeedGenerationScreen(BaseScreen):
             
             if input_event == HardwareButtonsConstants.KEY_UP:
                 self.turtle_y = max(0, self.turtle_y - 1)
-                self.moves.append('up')
+                self.moves += '000'
             elif input_event == HardwareButtonsConstants.KEY_DOWN:
                 self.turtle_y = min(self.grid_size - 1, self.turtle_y + 1)
-                self.moves.append('down')
+                self.moves += '001'
             elif input_event == HardwareButtonsConstants.KEY_LEFT:
                 self.turtle_x = max(0, self.turtle_x - 1)
-                self.moves.append('left')
+                self.moves += '010'
             elif input_event == HardwareButtonsConstants.KEY_RIGHT:
                 self.turtle_x = min(self.grid_size - 1, self.turtle_x + 1)
-                self.moves.append('right')
+                self.moves += '011'
             elif input_event == HardwareButtonsConstants.KEY_PRESS:
                 self.grid[self.turtle_y][self.turtle_x] = 'P'
-                self.moves.append('press')
+                self.moves += '100'
             elif input_event == HardwareButtonsConstants.KEY1:
                 self.grid[self.turtle_y][self.turtle_x] = '1'
-                self.moves.append('key1')
+                self.moves += '101'
             elif input_event == HardwareButtonsConstants.KEY2:
                 self.grid[self.turtle_y][self.turtle_x] = '2'
-                self.moves.append('key2')
+                self.moves += '110'
             elif input_event == HardwareButtonsConstants.KEY3:
                 self.grid[self.turtle_y][self.turtle_x] = '3'
-                self.moves.append('key3')
+                self.moves += '111'
 
-            if len(self.moves) >= self.num_moves:
+            if len(self.moves)//3 >= self.num_moves:
                 break
 
         return self.moves
