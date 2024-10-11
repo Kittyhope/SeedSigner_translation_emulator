@@ -14,7 +14,7 @@ from seedsigner.gui.components import FontAwesomeIconConstants, SeedSignerIconCo
 from seedsigner.helpers import embit_utils
 from seedsigner.gui.screens import (RET_CODE__BACK_BUTTON, ButtonListScreen,
     WarningScreen, DireWarningScreen, seed_screens)
-from seedsigner.gui.screens.screen import LargeIconStatusScreen, QRDisplayScreen
+from seedsigner.gui.screens.screen import LargeIconStatusScreen, QRDisplayScreen, TextWithButtonsScreen
 from seedsigner.helpers import embit_utils
 from seedsigner.models.decode_qr import DecodeQR
 from seedsigner.models.encode_qr import CompactSeedQrEncoder, GenericStaticQrEncoder, SeedQrEncoder, SpecterXPubQrEncoder, StaticXpubQrEncoder, UrXpubQrEncoder
@@ -386,6 +386,41 @@ class SeedAddPASSWORDView(View):
             self.USER_PASSWORD = convert_to_binary(ret_dict["user_id_password"])
             entropy_storage_instance.add_entropy("PASSWORD", self.USER_PASSWORD)
             self.USER_PASSWORD = ""
+            return Destination(BackStackView)
+        
+def binary_to_char(binary_string):
+    char_to_binary = {
+        **{format(i, '06b'): chr(i + 65) for i in range(26)},  # A-Z
+        **{format(i + 26, '06b'): chr(i + 97) for i in range(26)},  # a-z
+        **{format(i + 52, '06b'): str(i) for i in range(10)},  # 0-9
+        '111110': '!', '111111': '@'
+    }
+    return char_to_binary.get(binary_string, '')
+
+def binary_to_text(binary_string):
+    return ''.join(binary_to_char(binary_string[i:i+6]) for i in range(0, len(binary_string), 6))
+
+class AutoEntropyResultView(View):
+    def __init__(self, source):
+        super().__init__()
+        self.source = source
+
+    def run(self):
+        entropy = entropy_storage_instance.get_entropy(f"{self.source}_AUTO")
+        text = binary_to_text(entropy)
+
+        selected_menu_num = self.run_screen(
+            TextWithButtonsScreen,
+            title=f"Auto {self.source}",
+            text=f"Generated {self.source}: {text}",
+            button_data=[translator("Verify"), translator("Skip")],
+        )
+
+        if selected_menu_num == RET_CODE__BACK_BUTTON:
+            return Destination(BackStackView)
+        elif selected_menu_num == 0:
+            return Destination(BackStackView)
+        elif selected_menu_num == 1: 
             return Destination(BackStackView)
 
 class SeedAddPassphraseView(View):

@@ -1164,7 +1164,160 @@ class DireWarningScreen(WarningScreen):
     status_headline: str = translator("Classified Info!")     # The colored text under the alert icon
     status_color: str = GUIConstants.DIRE_WARNING_COLOR
 
+@dataclass
+class TextWithButtonsScreen(BaseTopNavScreen):
+    title: str = ""
+    text: str = ""
+    button_data: list = None
+    is_bottom_list: bool = True
+    text_font_size: int = GUIConstants.BODY_FONT_SIZE
+    text_color: str = GUIConstants.BODY_FONT_COLOR
+    selected_button: int = 0
 
+    def __post_init__(self):
+        super().__post_init__()
+        self.previous_selected_button = self.selected_button
+
+        self.text_area = TextArea(
+            text=self.text,
+            font_name=GUIConstants.BODY_FONT_NAME,
+            font_size=self.text_font_size,
+            font_color=self.text_color,
+            screen_x=GUIConstants.EDGE_PADDING,
+            screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING,
+            width=self.canvas_width - 2 * GUIConstants.EDGE_PADDING,
+        )
+        self.components.append(self.text_area)
+
+        button_y = self.canvas_height - (len(self.button_data) * GUIConstants.BUTTON_HEIGHT) - ((len(self.button_data) - 1) * GUIConstants.COMPONENT_PADDING) - GUIConstants.EDGE_PADDING if self.is_bottom_list else self.text_area.screen_y + self.text_area.height + GUIConstants.COMPONENT_PADDING
+        self.buttons = []
+        for i, button_text in enumerate(self.button_data):
+            button = Button(
+                text=button_text,
+                screen_x=GUIConstants.EDGE_PADDING,
+                screen_y=button_y + i * (GUIConstants.BUTTON_HEIGHT + GUIConstants.COMPONENT_PADDING),
+                width=self.canvas_width - 2 * GUIConstants.EDGE_PADDING,
+                is_selected=i == self.selected_button,
+            )
+            self.buttons.append(button)
+            self.components.append(button)
+
+    def _render(self):
+        super()._render()
+        for component in self.components:
+            component.render()
+
+    def _run(self):
+        while True:
+            input_event = self.hw_inputs.wait_for(HardwareButtonsConstants.ALL_KEYS)
+            
+            if self.top_nav.is_selected:
+                if input_event == HardwareButtonsConstants.KEY_PRESS:
+                    return RET_CODE__BACK_BUTTON
+                elif input_event in [HardwareButtonsConstants.KEY_DOWN, HardwareButtonsConstants.KEY_RIGHT]:
+                    self.top_nav.is_selected = False
+                    self.buttons[self.selected_button].is_selected = True
+                elif input_event == HardwareButtonsConstants.KEY_LEFT:
+                    # 뒤로 가기 버튼에서 왼쪽 키를 누르면 아무 일도 일어나지 않음
+                    pass
+            else:
+                if input_event == HardwareButtonsConstants.KEY_UP:
+                    if self.selected_button == 0:
+                        self.buttons[self.selected_button].is_selected = False
+                        self.top_nav.is_selected = True
+                    else:
+                        self.buttons[self.selected_button].is_selected = False
+                        self.selected_button -= 1
+                        self.buttons[self.selected_button].is_selected = True
+                elif input_event == HardwareButtonsConstants.KEY_DOWN:
+                    if self.selected_button < len(self.buttons) - 1:
+                        self.buttons[self.selected_button].is_selected = False
+                        self.selected_button += 1
+                        self.buttons[self.selected_button].is_selected = True
+                elif input_event == HardwareButtonsConstants.KEY_LEFT:
+                    self.previous_selected_button = self.selected_button
+                    self.buttons[self.selected_button].is_selected = False
+                    self.top_nav.is_selected = True
+                elif input_event == HardwareButtonsConstants.KEY_RIGHT:
+                    # 오른쪽 키는 무시
+                    pass
+                elif input_event == HardwareButtonsConstants.KEY_PRESS:
+                    return self.selected_button
+
+            self._render()
+            self.renderer.show_image()
+
+@dataclass
+class AutomodeStartScreen(WarningEdgesMixin, BaseTopNavScreen):
+    title: str = field(default="Auto Mode Confirmation")
+    status_color: str = "yellow"
+    text: str = "Do you want to generate the remaining entropy in Auto mode?"
+    button_data: list = None
+    selected_button: int = 0  # Add this line to define the selected_button attribute
+    show_back_button: bool = False
+
+    def __post_init__(self):
+        self.title = translator(self.title)
+        AUTO_MODE = translator("Continue")
+        GO_BACK = translator("Go Back")
+        if not self.button_data:
+            self.button_data = [AUTO_MODE, GO_BACK]
+        
+        super().__post_init__()
+
+        # Adjust the vertical position of the text
+        text_y = self.top_nav.height + int(self.canvas_height * 0.2)  # Move text up by 20% of screen height
+
+        self.components.append(TextArea(
+            text=self.text,
+            font_name=GUIConstants.BODY_FONT_NAME,
+            font_size=GUIConstants.BODY_FONT_SIZE,
+            screen_y=text_y,
+            height=int(self.canvas_height * 0.3),  # Limit height to 30% of screen height
+            width=self.canvas_width - GUIConstants.EDGE_PADDING * 2,
+            screen_x=GUIConstants.EDGE_PADDING,
+        ))
+
+        self.buttons = []
+        button_y = self.canvas_height - GUIConstants.BUTTON_HEIGHT - GUIConstants.EDGE_PADDING
+        for i, button_text in enumerate(self.button_data):
+            button = Button(
+                text=button_text,
+                screen_x=GUIConstants.EDGE_PADDING + i * (self.canvas_width - GUIConstants.EDGE_PADDING * 2) // 2,
+                screen_y=button_y,
+                width=(self.canvas_width - GUIConstants.EDGE_PADDING * 3) // 2,
+                height=GUIConstants.BUTTON_HEIGHT,
+            )
+            self.buttons.append(button)
+            self.components.append(button)
+
+        # Set initial button selection
+        self.buttons[self.selected_button].is_selected = True
+
+    def _render(self):
+        super()._render()
+        for i, button in enumerate(self.buttons):
+            button.is_selected = (i == self.selected_button)
+            button.render()
+        self.renderer.show_image()
+
+    def _run(self):
+        while True:
+            self._render()  # Ensure buttons are rendered with correct selection
+
+            user_input = self.hw_inputs.wait_for(
+                HardwareButtonsConstants.ALL_KEYS,
+                check_release=True,
+                release_keys=HardwareButtonsConstants.KEYS__ANYCLICK
+            )
+
+            if user_input in [HardwareButtonsConstants.KEY_LEFT, HardwareButtonsConstants.KEY_RIGHT]:
+                self.selected_button = 1 - self.selected_button  # Toggle between 0 and 1
+
+            elif user_input in HardwareButtonsConstants.KEYS__ANYCLICK:
+                return self.selected_button
+
+            self.renderer.show_image()
 
 @dataclass
 class ResetScreen(BaseTopNavScreen):
